@@ -37,7 +37,7 @@ window.ApdaNavbar = {
               Home
             </button>
             <button onclick="window.ApdaState.setView('citizen'); window.ApdaState.setCitizenTab('alerts');" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${window.ApdaState.currentView === 'citizen' ? 'bg-red-600/30 text-red-300 border border-red-500/30' : 'text-slate-300 hover:text-white hover:bg-white/5'}">
-              Citizen Portal
+              Citizen Dashboard
             </button>
             <button onclick="window.ApdaState.setView('responder');" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${window.ApdaState.currentView === 'responder' ? 'bg-amber-600/30 text-amber-300 border border-amber-500/30' : 'text-slate-300 hover:text-white hover:bg-white/5'}">
               Responder Command ⚡

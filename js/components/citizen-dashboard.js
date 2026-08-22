@@ -1,84 +1,24 @@
 // Main Citizen Dashboard Component
-
 window.ApdaCitizenDashboard = {
   render() {
     const activeTab = window.ApdaState.citizenTab;
-    const user = window.ApdaState.currentUser || { name: 'Priya Sharma (Assam Zone)' };
-
+    const user = window.ApdaState.currentUser || { name: 'Priya Sharma', city: 'Hatigaon, Guwahati' };
     const navTabs = [
-      { id: 'alerts', label: 'Live Alerts', icon: '🚨' },
-      { id: 'shelters', label: 'Shelter Map', icon: '🏠' },
-      { id: 'requests', label: 'My Requests', icon: '📋' },
-      { id: 'chat', label: 'Community Chat', icon: '💬' },
-      { id: 'family', label: 'Family Check-in', icon: '👨‍👩‍👧' },
-      { id: 'guides', label: 'Safety Guides', icon: '📖' },
-      { id: 'updates', label: 'Official Updates', icon: '📢' },
-      { id: 'profile', label: 'Medical Profile', icon: '🩺' }
+      { id: 'alerts', label: 'Live Alerts', icon: '🚨' }, { id: 'shelters', label: 'Shelter Map', icon: '🏠' }, { id: 'requests', label: 'My Requests', icon: '📋' }, { id: 'chat', label: 'Community Chat', icon: '💬' },
+      { id: 'family', label: 'Family Check-in', icon: '👨‍👩‍👧' }, { id: 'guides', label: 'Safety Guides', icon: '📖' }, { id: 'updates', label: 'Official Updates', icon: '📢' }, { id: 'profile', label: 'Medical Profile', icon: '🩺' }
     ];
-
-    let contentHtml = '';
-    if (activeTab === 'alerts') contentHtml = window.ApdaLiveAlerts.render();
-    else if (activeTab === 'shelters') contentHtml = window.ApdaShelterMap.render();
-    else if (activeTab === 'requests') contentHtml = window.ApdaMyRequests.render();
-    else if (activeTab === 'chat') contentHtml = window.ApdaCommunityChat.render();
-    else if (activeTab === 'family') contentHtml = window.ApdaFamilyCheckin.render();
-    else if (activeTab === 'guides') contentHtml = window.ApdaSafetyGuidesComp.render();
-    else if (activeTab === 'updates') contentHtml = window.ApdaCommunityUpdates.render();
-    else if (activeTab === 'profile') contentHtml = window.ApdaProfileSettings.render();
-    else contentHtml = window.ApdaLiveAlerts.render();
-
-    return `
-      <div class="min-h-screen pb-28 pt-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
-        
-        <!-- Welcome User Bar -->
-        <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-red-600 flex items-center justify-center font-bold text-white text-base shadow-lg shadow-red-600/30">
-              👤
-            </div>
-            <div>
-              <h1 class="text-base sm:text-lg font-black text-white">
-                Citizen Portal — ${user.name}
-              </h1>
-              <p class="text-xs text-slate-400">
-                Location: ${user.city || 'Hatigaon, Guwahati (Assam Inundation Sector)'}
-              </p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <!-- 1-Tap Trigger SOS -->
-            <button onclick="window.ApdaSOSModal.openReportModal()" class="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 font-extrabold text-white text-xs rounded-xl shadow-lg shadow-red-600/40 uppercase tracking-wider flex items-center gap-2">
-              <span>🚨</span> New SOS Report
-            </button>
-            <button onclick="window.ApdaState.setView('responder')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700">
-              Switch to Responder ➔
-            </button>
-          </div>
-        </div>
-
-        <!-- Navigation Tabs Bar -->
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-white/10 chat-scroll">
-          ${navTabs.map(t => `
-            <button onclick="window.ApdaState.setCitizenTab('${t.id}')" class="px-3.5 py-2.5 rounded-2xl text-xs font-extrabold flex items-center gap-2 whitespace-nowrap transition-all ${activeTab === t.id ? 'bg-red-600 text-white shadow-lg shadow-red-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}">
-              <span>${t.icon}</span>
-              <span>${t.label}</span>
-            </button>
-          `).join('')}
-        </div>
-
-        <!-- Subtab Content Injection Container -->
-        <div id="citizen-subtab-container">
-          ${contentHtml}
-        </div>
-
-        <!-- Persistent Floating Panic SOS Button (Always visible on Citizen portal) -->
-        <button onclick="window.ApdaSOSModal.triggerPanicSOS()" class="floating-sos-btn w-16 h-16 sm:w-20 sm:h-20 rounded-full flex flex-col items-center justify-center text-white border-2 border-white/80 cursor-pointer" title="Emergency 1-Tap Distress Signal">
-          <span class="text-xl sm:text-2xl animate-pulse">🚨</span>
-          <span class="text-[9px] sm:text-[10px] font-black uppercase tracking-tighter mt-0.5">SOS</span>
-        </button>
-
-      </div>
-    `;
+    const components = { alerts: 'ApdaLiveAlerts', shelters: 'ApdaShelterMap', requests: 'ApdaMyRequests', chat: 'ApdaCommunityChat', family: 'ApdaFamilyCheckin', guides: 'ApdaSafetyGuidesComp', updates: 'ApdaCommunityUpdates', profile: 'ApdaProfileSettings' };
+    const contentHtml = window[components[activeTab] || components.alerts].render();
+    const location = user.city || 'Hatigaon, Guwahati';
+    const activeRequests = window.ApdaState.requests.filter(r => !['Resolved', 'Closed'].includes(r.status)).length;
+    const openAlerts = window.ApdaState.alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
+    return `<div class="citizen-dashboard min-h-screen pb-28">
+      <section class="citizen-hero px-4 sm:px-6 lg:px-8 pt-6 pb-20"><div class="max-w-7xl mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-5"><div class="flex items-center gap-4"><div class="citizen-avatar">${user.name ? user.name.charAt(0) : 'C'}</div><div><p class="text-red-200 text-xs font-bold uppercase tracking-[0.18em]">Citizen Dashboard</p><h1 class="text-2xl sm:text-3xl font-black text-white mt-1">Good to see you, ${user.name.split(' ')[0]}.</h1><button onclick="window.ApdaState.setCitizenTab('shelters')" class="mt-2 text-sm text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors">⌖ ${location} <span class="text-slate-500">•</span> View safe places</button></div></div><button onclick="window.ApdaSOSModal.openReportModal()" class="citizen-sos-action"><span class="text-lg">🚨</span> Report an emergency <span>→</span></button></div>
+        <div class="citizen-stat-grid"><button onclick="window.ApdaState.setCitizenTab('alerts')" class="citizen-stat-card text-left"><span class="stat-icon bg-amber-400/15">⚠</span><span><strong>${openAlerts}</strong><small>high-priority alerts</small></span></button><button onclick="window.ApdaState.setCitizenTab('requests')" class="citizen-stat-card text-left"><span class="stat-icon bg-sky-400/15">⌁</span><span><strong>${activeRequests}</strong><small>active requests</small></span></button><button onclick="window.ApdaState.setCitizenTab('family')" class="citizen-stat-card text-left"><span class="stat-icon bg-emerald-400/15">✓</span><span><strong>Connected</strong><small>family check-in status</small></span></button></div>
+      </div></section>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12"><div class="citizen-workspace"><aside class="citizen-sidebar glass-panel"><p class="px-3 pt-4 pb-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Your workspace</p><nav class="space-y-1">${navTabs.map(t => `<button onclick="window.ApdaState.setCitizenTab('${t.id}')" class="citizen-nav-item ${activeTab === t.id ? 'is-active' : ''}"><span class="text-base">${t.icon}</span><span>${t.label}</span>${t.id === 'alerts' && openAlerts ? `<b>${openAlerts}</b>` : ''}</button>`).join('')}</nav><div class="citizen-sidebar-help"><span>Need immediate help?</span><a href="tel:112">Call 112</a></div></aside>
+      <div class="min-w-0 space-y-5"><div class="citizen-quick-actions glass-panel"><div><p class="text-sm font-extrabold text-white">Quick actions</p><p class="text-xs text-slate-400 mt-0.5">The essentials, one tap away.</p></div><div class="flex flex-wrap gap-2"><button onclick="window.ApdaSOSModal.openReportModal()" class="quick-action quick-action-danger">🚨 Send SOS</button><button onclick="window.ApdaState.setCitizenTab('shelters')" class="quick-action">🏠 Find shelter</button><button onclick="window.ApdaState.setCitizenTab('family')" class="quick-action">👨‍👩‍👧 Check in</button><button onclick="window.ApdaState.setCitizenTab('guides')" class="quick-action">📖 Safety guide</button></div></div><div id="citizen-subtab-container" class="citizen-content-enter">${contentHtml}</div></div>
+      </div></div><button onclick="window.ApdaSOSModal.triggerPanicSOS()" class="floating-sos-btn w-16 h-16 sm:w-20 sm:h-20 rounded-full flex flex-col items-center justify-center text-white border-2 border-white/80 cursor-pointer" title="Emergency 1-Tap Distress Signal"><span class="text-xl sm:text-2xl animate-pulse">🚨</span><span class="text-[9px] sm:text-[10px] font-black uppercase tracking-tighter mt-0.5">SOS</span></button></div>`;
   }
 };
