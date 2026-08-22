@@ -9,6 +9,7 @@ window.ApdaSOSModal = {
   audioRecorder: null,
   audioStream: null,
   audioChunks: [],
+  recordedAudioUrl: null,
 
   init() {
     this.setupSpeechRecognition();
@@ -58,9 +59,12 @@ window.ApdaSOSModal = {
       this.audioRecorder.ondataavailable = event => { if (event.data.size) this.audioChunks.push(event.data); };
       this.audioRecorder.onstop = () => {
         const audioBlob = new Blob(this.audioChunks, { type: this.audioRecorder.mimeType || 'audio/webm' });
-        if (audioBlob.size) this.uploadedMedia.push({ type: 'audio', url: URL.createObjectURL(audioBlob), tag: 'Voice recording' });
+        if (audioBlob.size) {
+          this.recordedAudioUrl = URL.createObjectURL(audioBlob);
+          this.uploadedMedia.push({ type: 'audio', url: this.recordedAudioUrl, tag: 'Voice recording' });
+        }
         this.audioStream.getTracks().forEach(track => track.stop());
-        this.updateMicButton(false);
+        this.updateMicButton(false, true);
         window.ApdaState.notify('Voice recording attached successfully', 'success');
         this.updateLiveAIScore();
       };
@@ -71,7 +75,7 @@ window.ApdaSOSModal = {
     }
   },
 
-  updateMicButton(isListening) {
+  updateMicButton(isListening, hasRecording = false) {
     const btn = document.getElementById('mic-btn');
     if (btn) {
       if (isListening) {
@@ -81,9 +85,29 @@ window.ApdaSOSModal = {
         btn.innerHTML = '🎙️ Listening...';
       } else {
         btn.className = 'p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold flex items-center gap-1';
+        if (hasRecording) {
+          btn.innerHTML = '<span>▶ Play</span><span id="remove-audio-btn" class="ml-1 border-l border-slate-500/60 pl-2 text-red-300 hover:text-white" title="Remove recording">×</span>';
+          btn.onclick = () => this.playRecordedAudio();
+          document.getElementById('remove-audio-btn').onclick = event => { event.stopPropagation(); this.removeRecordedAudio(); };
+          return;
+        }
         btn.innerHTML = '🎙️ Voice Input';
       }
     }
+  },
+
+  playRecordedAudio() {
+    if (!this.recordedAudioUrl) return;
+    const player = new Audio(this.recordedAudioUrl);
+    player.play().catch(() => window.ApdaState.notify('Unable to play the recorded audio', 'warning'));
+  },
+
+  removeRecordedAudio() {
+    if (this.recordedAudioUrl) URL.revokeObjectURL(this.recordedAudioUrl);
+    this.uploadedMedia = this.uploadedMedia.filter(media => media.type !== 'audio');
+    this.recordedAudioUrl = null;
+    this.updateMicButton(false);
+    window.ApdaState.notify('Voice recording removed', 'info');
   },
 
   // 1-Tap Quick Panic Countdown Trigger
@@ -169,6 +193,7 @@ window.ApdaSOSModal = {
   openReportModal(prefillType = 'flood') {
     this.close();
     this.uploadedMedia = [];
+    this.recordedAudioUrl = null;
 
     const modal = document.createElement('div');
     modal.id = 'sos-report-modal';
@@ -208,7 +233,7 @@ window.ApdaSOSModal = {
                 <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-900/80 cursor-pointer hover:border-red-500 transition-all">
                   <input type="radio" name="sos-disaster-type" value="${d.id}" ${d.id === prefillType ? 'checked' : ''} onchange="window.ApdaSOSModal.updateLiveAIScore()" class="accent-red-500">
                   <span class="text-sm">${d.icon}</span>
-                  <span class="text-xs font-semibold text-slate-200">${d.label}</span>
+                  <span class="text-xs font-semibold text-slate-200">${d.id === 'forest_fire' ? 'Fire' : d.label}</span>
                 </label>
               `).join('')}
             </div>
@@ -297,7 +322,8 @@ window.ApdaSOSModal = {
           </div>
 
           <!-- LIVE AI SCORE PREVIEW CARD -->
-          <div id="live-ai-preview-box" class="p-4 rounded-2xl bg-gradient-to-r from-red-950/70 via-slate-900 to-amber-950/70 border border-red-500/40">
+          <div class="p-4 rounded-2xl bg-red-950/50 border border-red-500/40 text-center"><span id="simple-risk-score" class="text-sm font-black text-red-300">Risk Score: 92%</span></div>
+          <div id="live-ai-preview-box" class="hidden">
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-bold text-red-400 flex items-center gap-1.5">
                 <span>🤖</span> Live AI Triage Assessment
@@ -495,6 +521,7 @@ window.ApdaSOSModal = {
 
     const aiRes = window.ApdaAIEngine.evaluateReport(draftReport, window.ApdaState.requests);
 
+    const simpleRiskScore = document.getElementById('simple-risk-score');
     const badge = document.getElementById('ai-risk-badge');
     const confBar = document.getElementById('ai-conf-bar');
     const confText = document.getElementById('ai-conf-text');
@@ -509,6 +536,7 @@ window.ApdaSOSModal = {
     if (confText) confText.textContent = `${aiRes.confidence}% Verified (Cluster: ${aiRes.clusterCount} nearby)`;
     if (riskBar) riskBar.style.width = `${aiRes.riskScore}%`;
     if (riskText) riskText.textContent = `${aiRes.riskScore}/100 (${aiRes.keywordsDetected.slice(0, 3).join(', ') || 'Standard Triage'})`;
+    if (simpleRiskScore) simpleRiskScore.textContent = `Risk Score: ${aiRes.riskScore}%`;
   },
 
   handleFormSubmit(e) {

@@ -41,7 +41,7 @@ window.ApdaMyRequests = {
           </div>
         ` : userRequests.map(req => {
           
-          const steps = ['Submitted', 'AI Verified', 'Dispatched', 'In Progress', 'Resolved'];
+          const steps = ['Submitted', 'Verification', 'Dispatched', 'In Progress', 'Resolved'];
           const currentIndex = steps.indexOf(req.status);
           const activeIndex = currentIndex >= 0 ? currentIndex : (req.status === 'Verified' ? 1 : 0);
 
@@ -62,7 +62,7 @@ window.ApdaMyRequests = {
                 </div>
 
                 <!-- AI Score Badge -->
-                <div class="flex items-center gap-3">
+                <div class="hidden">
                   <div class="text-right">
                     <span class="text-[10px] text-slate-400 uppercase tracking-wider block">AI Confidence</span>
                     <span class="text-xs font-bold text-emerald-400">${req.aiScore.confidence}% Verified</span>
@@ -136,10 +136,10 @@ window.ApdaMyRequests = {
                   </div>
                 </div>
               ` : `
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                <div class="hidden">
                   <div class="flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-                    <span>Awaiting Responder Command Unit Assignment (AI Score Triage Active)</span>
+                    <span>Awaiting Responder Command Unit Assignment</span>
                   </div>
                   <button onclick="window.ApdaState.setView('responder')" class="text-xs text-amber-400 hover:underline font-bold">
                     View in Command Queue →
@@ -155,7 +155,7 @@ window.ApdaMyRequests = {
                     <div class="relative">
                       <span class="w-2 h-2 rounded-full bg-red-500 absolute -left-[17px] top-1"></span>
                       <div class="flex items-center gap-2">
-                        <span class="font-bold text-slate-300">${t.status}</span>
+                        <span class="font-bold text-slate-300">${['AI Verified', 'AI Evaluated'].includes(t.status) ? 'Verification' : t.status}</span>
                         <span class="text-[10px] text-slate-500">${t.time}</span>
                       </div>
                       <p class="text-slate-400 text-[11px] mt-0.5">${t.note}</p>

@@ -145,7 +145,7 @@ window.ApdaState = {
       submittedAt: 'Just now',
       timeline: [
         { time: 'Just now', status: 'Submitted', note: 'SOS Distress Signal broadcast to NDRF & State Command' },
-        { time: 'Just now', status: 'AI Evaluated', note: `AI Confidence ${aiEvaluation.confidence}%, Risk ${aiEvaluation.riskScore} (${aiEvaluation.riskLevel})` }
+        { time: 'Just now', status: 'Verification', note: 'Report verified and shared with emergency command.' }
       ]
     };
 
@@ -434,7 +434,7 @@ window.ApdaState = {
             <span class="px-2 py-0.5 rounded text-xs bg-emerald-500/20 text-emerald-300">Active</span>
           </div>
 
-          <div class="p-3 rounded-lg bg-red-950/40 border border-red-500/30 text-xs text-red-200">
+          <div class="hidden">
             <strong>🤖 AI Triage Summary:</strong> ${request.aiScore.aiNotes}
           </div>
         </div>
