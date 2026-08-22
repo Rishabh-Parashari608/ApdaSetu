@@ -6,6 +6,9 @@ window.ApdaSOSModal = {
   currentCoords: [26.1445, 91.7362],
   uploadedMedia: [],
   speechRecognition: null,
+  audioRecorder: null,
+  audioStream: null,
+  audioChunks: [],
 
   init() {
     this.setupSpeechRecognition();
@@ -39,19 +42,32 @@ window.ApdaSOSModal = {
     }
   },
 
-  toggleVoiceInput() {
-    if (!this.speechRecognition) {
-      if (window.ApdaState) {
-        window.ApdaState.notify('Speech recognition is not supported on this browser', 'warning');
-      }
+  async toggleVoiceInput() {
+    if (this.audioRecorder && this.audioRecorder.state === 'recording') {
+      this.audioRecorder.stop();
+      return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+      window.ApdaState.notify('Audio recording is not supported in this browser', 'warning');
       return;
     }
     try {
-      this.speechRecognition.start();
+      this.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.audioChunks = [];
+      this.audioRecorder = new MediaRecorder(this.audioStream);
+      this.audioRecorder.ondataavailable = event => { if (event.data.size) this.audioChunks.push(event.data); };
+      this.audioRecorder.onstop = () => {
+        const audioBlob = new Blob(this.audioChunks, { type: this.audioRecorder.mimeType || 'audio/webm' });
+        if (audioBlob.size) this.uploadedMedia.push({ type: 'audio', url: URL.createObjectURL(audioBlob), tag: 'Voice recording' });
+        this.audioStream.getTracks().forEach(track => track.stop());
+        this.updateMicButton(false);
+        window.ApdaState.notify('Voice recording attached successfully', 'success');
+        this.updateLiveAIScore();
+      };
+      this.audioRecorder.start();
       this.updateMicButton(true);
-    } catch (e) {
-      this.speechRecognition.stop();
-      this.updateMicButton(false);
+    } catch (error) {
+      window.ApdaState.notify('Microphone permission is required to record audio', 'warning');
     }
   },
 
@@ -60,6 +76,8 @@ window.ApdaSOSModal = {
     if (btn) {
       if (isListening) {
         btn.className = 'p-2 rounded-xl bg-red-600 text-white animate-pulse shadow-lg';
+        btn.textContent = 'Stop Recording';
+        return;
         btn.innerHTML = '🎙️ Listening...';
       } else {
         btn.className = 'p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold flex items-center gap-1';
@@ -154,9 +172,9 @@ window.ApdaSOSModal = {
 
     const modal = document.createElement('div');
     modal.id = 'sos-report-modal';
-    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto modal-animate-in';
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto modal-animate-in sos-report-backdrop';
     modal.innerHTML = `
-      <div class="glass-panel-danger w-full max-w-2xl rounded-3xl p-6 sm:p-8 text-white border-2 border-red-500/80 shadow-2xl relative my-8">
+      <div class="glass-panel-danger w-full max-w-2xl rounded-none sm:rounded-3xl p-5 sm:p-8 text-white border-0 sm:border-2 border-red-500/80 shadow-2xl relative sos-report-panel">
         
         <div class="flex items-center justify-between pb-4 border-b border-red-500/30">
           <div class="flex items-center gap-3">
@@ -171,7 +189,7 @@ window.ApdaSOSModal = {
           <button onclick="window.ApdaSOSModal.close()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 font-bold">×</button>
         </div>
 
-        <form onsubmit="window.ApdaSOSModal.handleFormSubmit(event)" class="space-y-4 mt-5">
+        <form onsubmit="window.ApdaSOSModal.handleFormSubmit(event)" class="space-y-4 mt-5 sos-report-form">
           
           <!-- Disaster Type Selector -->
           <div>
@@ -186,7 +204,7 @@ window.ApdaSOSModal = {
                 { id: 'collapse', label: 'Building Collapse', icon: '🏢' },
                 { id: 'medical', label: 'Medical Trauma', icon: '🩺' },
                 { id: 'other', label: 'Other Hazard', icon: '⚠️' }
-              ].map(d => `
+              ].filter(d => !['collapse', 'medical', 'other'].includes(d.id)).map(d => `
                 <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-900/80 cursor-pointer hover:border-red-500 transition-all">
                   <input type="radio" name="sos-disaster-type" value="${d.id}" ${d.id === prefillType ? 'checked' : ''} onchange="window.ApdaSOSModal.updateLiveAIScore()" class="accent-red-500">
                   <span class="text-sm">${d.icon}</span>
@@ -198,15 +216,22 @@ window.ApdaSOSModal = {
 
           <!-- GPS Location Capture -->
           <div>
-            <div class="flex items-center justify-between mb-1.5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1.5">
               <label class="text-xs font-bold text-slate-300 uppercase tracking-wider">2. Location & GPS Coordinate</label>
-              <button type="button" onclick="window.ApdaSOSModal.fetchCurrentGPS()" class="text-xs font-bold text-red-400 hover:text-red-300 flex items-center gap-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="window.ApdaSOSModal.fetchCurrentGPS()" class="px-3 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-all">◎ My Current Location</button>
+                <button type="button" onclick="window.ApdaSOSModal.openMapPicker()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold transition-all">⌖ Select On Map</button>
+              </div>
+              <button type="button" onclick="window.ApdaSOSModal.fetchCurrentGPS()" class="hidden">
                 <span>📍 Auto-Fetch GPS</span>
               </button>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <input type="text" id="sos-address" required placeholder="House / Landmark / Street" value="Hatigaon By-lane 3, Guwahati" class="sm:col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
-              <input type="text" id="sos-coords" readonly value="26.1445, 91.7362" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-emerald-400 font-mono text-center">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input type="text" id="sos-locality" required placeholder="Locality / landmark" value="Hatigaon By-lane 3" oninput="window.ApdaSOSModal.queueAddressGeocode()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+              <input type="text" id="sos-city" required placeholder="Village or city" value="Guwahati" oninput="window.ApdaSOSModal.queueAddressGeocode()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+              <input type="text" id="sos-district" required placeholder="District" value="Kamrup Metropolitan" oninput="window.ApdaSOSModal.queueAddressGeocode()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+              <input type="text" id="sos-state" required placeholder="State" value="Assam" oninput="window.ApdaSOSModal.queueAddressGeocode()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+              <input type="text" id="sos-coords" readonly value="26.1445, 91.7362" class="sm:col-span-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-emerald-400 font-mono text-center">
             </div>
           </div>
 
@@ -223,14 +248,18 @@ window.ApdaSOSModal = {
 
             <div>
               <label class="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">Vulnerable Population</label>
-              <div class="grid grid-cols-3 gap-1.5 text-center">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center">
                 <div class="bg-slate-900 border border-slate-800 p-1 rounded-xl">
-                  <span class="text-[10px] text-slate-400 block">Infants</span>
-                  <input type="number" id="sos-infants" min="0" value="1" onchange="window.ApdaSOSModal.updateLiveAIScore()" class="w-full bg-transparent text-center font-bold text-xs text-white">
+                  <span class="text-[10px] text-slate-400 block">Children</span>
+                  <input type="number" id="sos-children" min="0" value="0" onchange="window.ApdaSOSModal.updateLiveAIScore()" class="w-full bg-transparent text-center font-bold text-xs text-white">
                 </div>
                 <div class="bg-slate-900 border border-slate-800 p-1 rounded-xl">
-                  <span class="text-[10px] text-slate-400 block">Elderly</span>
-                  <input type="number" id="sos-elderly" min="0" value="1" onchange="window.ApdaSOSModal.updateLiveAIScore()" class="w-full bg-transparent text-center font-bold text-xs text-white">
+                  <span class="text-[10px] text-slate-400 block">Female</span>
+                  <input type="number" id="sos-female" min="0" value="0" onchange="window.ApdaSOSModal.updateLiveAIScore()" class="w-full bg-transparent text-center font-bold text-xs text-white">
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-1 rounded-xl">
+                  <span class="text-[10px] text-slate-400 block">Senior Citizens</span>
+                  <input type="number" id="sos-seniors" min="0" value="0" onchange="window.ApdaSOSModal.updateLiveAIScore()" class="w-full bg-transparent text-center font-bold text-xs text-white">
                 </div>
                 <div class="bg-slate-900 border border-slate-800 p-1 rounded-xl">
                   <span class="text-[10px] text-slate-400 block">Injured</span>
@@ -244,13 +273,15 @@ window.ApdaSOSModal = {
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label class="text-xs font-bold text-slate-300 uppercase tracking-wider">4. Photo / Video Evidence</label>
-              <span class="text-[11px] text-emerald-400">+20% AI Confidence boost</span>
+              <span class="hidden">+20% AI Confidence boost</span>
             </div>
             <div class="flex items-center gap-3">
-              <button type="button" onclick="window.ApdaSOSModal.simulateMediaAttach()" class="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-dashed border-slate-600 hover:border-red-500 text-xs font-semibold text-slate-300 flex items-center gap-2 transition-all">
+              <button type="button" onclick="window.ApdaSOSModal.simulateMediaAttach()" class="hidden">
                 <span>📷</span> Attach Disaster Photo / Clip
               </button>
-              <div id="attached-media-preview" class="flex items-center gap-2"></div>
+              <button type="button" id="video-attach-btn" onclick="document.getElementById('sos-video-input').click()" class="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-dashed border-slate-600 hover:border-red-500 text-xs font-semibold text-slate-300 flex items-center gap-2 transition-all">Attach Disaster Clip</button>
+              <input id="sos-video-input" type="file" accept="video/*" class="hidden" onchange="window.ApdaSOSModal.attachVideo(this)">
+              <div id="attached-media-preview" class="hidden"></div>
             </div>
           </div>
 
@@ -295,7 +326,7 @@ window.ApdaSOSModal = {
           </div>
 
           <!-- Submit Button -->
-          <button type="submit" class="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 font-extrabold text-white rounded-2xl shadow-xl shadow-red-600/40 uppercase tracking-wider text-sm transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2">
+          <button type="submit" class="sos-submit-button w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 font-extrabold text-white rounded-2xl shadow-xl shadow-red-600/40 uppercase tracking-wider text-sm transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2">
             <span>🚨</span> Broadcast Multi-Channel SOS
           </button>
         </form>
@@ -319,26 +350,106 @@ window.ApdaSOSModal = {
     }
   },
 
+  getAddress() {
+    return ['sos-locality', 'sos-city', 'sos-district', 'sos-state'].map(id => document.getElementById(id)?.value.trim()).filter(Boolean).join(', ');
+  },
+
+  setCoordinates(lat, lng, message = 'Location ready') {
+    this.currentCoords = [Number(lat), Number(lng)];
+    const coordsInput = document.getElementById('sos-coords');
+    if (coordsInput) coordsInput.value = `${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`;
+    this.updateLiveAIScore();
+  },
+
+  queueAddressGeocode() {
+    clearTimeout(this.addressGeocodeTimer);
+    this.addressGeocodeTimer = setTimeout(() => this.geocodeAddress(), 700);
+  },
+
+  async geocodeAddress() {
+    const address = this.getAddress();
+    if (address.length < 5) return;
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(address)}`);
+      const results = await response.json();
+      if (!results.length) throw new Error('not found');
+      this.setCoordinates(results[0].lat, results[0].lon, 'Coordinates updated from address');
+    } catch (error) {
+      if (window.ApdaState) window.ApdaState.notify('Address could not be located. Select it on the map instead.', 'warning');
+    }
+  },
+
+  async reverseGeocode(lat, lng) {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+      const result = await response.json(); const a = result.address || {};
+      const fields = { 'sos-locality': a.road || a.neighbourhood || a.suburb || '', 'sos-city': a.city || a.town || a.village || '', 'sos-district': a.county || a.state_district || '', 'sos-state': a.state || '' };
+      Object.entries(fields).forEach(([id, value]) => { const input = document.getElementById(id); if (input && value) input.value = value; });
+    } catch (error) { /* Coordinates remain usable if reverse geocoding is unavailable. */ }
+  },
+
   fetchCurrentGPS() {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          this.currentCoords = [pos.coords.latitude, pos.coords.longitude];
-          const coordsInput = document.getElementById('sos-coords');
-          if (coordsInput) coordsInput.value = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
-          this.updateLiveAIScore();
+          this.setCoordinates(pos.coords.latitude, pos.coords.longitude, 'Live location acquired');
+          this.reverseGeocode(pos.coords.latitude, pos.coords.longitude);
           if (window.ApdaState) {
             window.ApdaState.notify('High-precision GPS coordinates locked', 'success');
           }
         },
         () => {
           // Fallback simulation
-          this.currentCoords = [26.1445, 91.7362];
-          const coordsInput = document.getElementById('sos-coords');
-          if (coordsInput) coordsInput.value = `26.1445, 91.7362 (Simulated GPS)`;
+          this.setCoordinates(26.1445, 91.7362, 'Location permission unavailable');
         }
       );
     }
+  },
+
+  openMapPicker() {
+    const modal = document.createElement('div');
+    modal.id = 'sos-map-picker';
+    modal.className = 'fixed inset-0 z-[60] bg-slate-950/85 backdrop-blur-sm p-3 sm:p-6 flex items-center justify-center';
+    modal.innerHTML = `<div class="w-full max-w-3xl rounded-3xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl"><div class="flex items-center justify-between p-4 border-b border-slate-700"><div><h3 class="font-black text-white">Select emergency location</h3><p class="text-xs text-slate-400 mt-0.5">Tap or click the map to place the location pin.</p></div><button onclick="window.ApdaSOSModal.closeMapPicker()" class="w-9 h-9 rounded-xl bg-slate-800 text-slate-300 hover:text-white">×</button></div><div id="sos-map-picker-canvas" class="h-[52vh] min-h-[300px]"></div><div class="flex justify-end p-4 border-t border-slate-700"><button onclick="window.ApdaSOSModal.confirmMapLocation()" class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-black">Use this location</button></div></div>`;
+    document.body.appendChild(modal); setTimeout(() => this.initMapPicker(), 80);
+  },
+
+  initMapPicker() {
+    if (typeof L === 'undefined') return;
+    this.mapPicker = L.map('sos-map-picker-canvas').setView(this.currentCoords, 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(this.mapPicker);
+    this.mapPickerMarker = L.marker(this.currentCoords, { draggable: true }).addTo(this.mapPicker); this.mapPickerCoords = [...this.currentCoords];
+    const update = latlng => { this.mapPickerCoords = [latlng.lat, latlng.lng]; };
+    this.mapPicker.on('click', event => { this.mapPickerMarker.setLatLng(event.latlng); update(event.latlng); }); this.mapPickerMarker.on('dragend', event => update(event.target.getLatLng()));
+  },
+
+  confirmMapLocation() {
+    if (this.mapPickerCoords) { this.setCoordinates(this.mapPickerCoords[0], this.mapPickerCoords[1], 'Location selected on map'); this.reverseGeocode(this.mapPickerCoords[0], this.mapPickerCoords[1]); }
+    this.closeMapPicker();
+  },
+
+  closeMapPicker() {
+    if (this.mapPicker) { this.mapPicker.remove(); this.mapPicker = null; }
+    const modal = document.getElementById('sos-map-picker'); if (modal) modal.remove();
+  },
+
+  attachVideo(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('video/')) {
+      window.ApdaState.notify('Please select a video clip', 'warning');
+      input.value = '';
+      return;
+    }
+    this.uploadedMedia.push({ type: 'video', url: URL.createObjectURL(file), tag: file.name });
+    const button = document.getElementById('video-attach-btn');
+    if (button) {
+      button.disabled = true;
+      button.className = 'px-3.5 py-2.5 rounded-xl bg-emerald-900/40 border border-emerald-500/30 text-emerald-300 text-xs font-semibold cursor-not-allowed';
+      button.textContent = 'Disaster Clip Attached';
+    }
+    window.ApdaState.notify('Disaster clip attached successfully', 'success');
+    this.updateLiveAIScore();
   },
 
   simulateMediaAttach() {
@@ -366,8 +477,9 @@ window.ApdaSOSModal = {
     const typeEl = document.querySelector('input[name="sos-disaster-type"]:checked');
     const disasterType = typeEl ? typeEl.value : 'flood';
     const peopleAffected = document.getElementById('sos-people-count') ? parseInt(document.getElementById('sos-people-count').value) : 4;
-    const infants = document.getElementById('sos-infants') ? parseInt(document.getElementById('sos-infants').value) : 0;
-    const elderly = document.getElementById('sos-elderly') ? parseInt(document.getElementById('sos-elderly').value) : 0;
+    const infants = document.getElementById('sos-children') ? parseInt(document.getElementById('sos-children').value) : 0;
+    const elderly = document.getElementById('sos-seniors') ? parseInt(document.getElementById('sos-seniors').value) : 0;
+    const female = document.getElementById('sos-female') ? parseInt(document.getElementById('sos-female').value) : 0;
     const injured = document.getElementById('sos-injured') ? parseInt(document.getElementById('sos-injured').value) : 0;
     const description = document.getElementById('sos-description') ? document.getElementById('sos-description').value : '';
 
@@ -377,7 +489,7 @@ window.ApdaSOSModal = {
       coordinates: this.currentCoords,
       media: this.uploadedMedia,
       userPhone: '+91 98765 43210',
-      vulnerable: { infants, elderly, injured },
+      vulnerable: { infants, elderly, female, injured },
       description
     };
 
@@ -408,11 +520,12 @@ window.ApdaSOSModal = {
       disasterType: typeEl ? typeEl.value : 'flood',
       severity: 'critical',
       coordinates: this.currentCoords,
-      address: document.getElementById('sos-address').value || 'Guwahati Sector 4',
+      address: this.getAddress() || 'Guwahati Sector 4',
       peopleAffected: parseInt(document.getElementById('sos-people-count').value) || 1,
       vulnerable: {
-        infants: parseInt(document.getElementById('sos-infants').value) || 0,
-        elderly: parseInt(document.getElementById('sos-elderly').value) || 0,
+        infants: parseInt(document.getElementById('sos-children').value) || 0,
+        elderly: parseInt(document.getElementById('sos-seniors').value) || 0,
+        female: parseInt(document.getElementById('sos-female').value) || 0,
         injured: parseInt(document.getElementById('sos-injured').value) || 0
       },
       description: document.getElementById('sos-description').value,

@@ -313,6 +313,13 @@ body.low-bandwidth .low-bandwidth-map-fallback {
   animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Emergency report: one contained, scrollable panel at every viewport height. */
+.sos-report-panel { max-height: calc(100dvh - 2rem); display: flex; flex-direction: column; overflow: hidden; }
+.sos-report-form { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; padding-right: .35rem; padding-bottom: .35rem; scrollbar-width: thin; scrollbar-color: #7f1d1d transparent; }
+.sos-report-form::-webkit-scrollbar { width: 5px; }.sos-report-form::-webkit-scrollbar-thumb { background: #7f1d1d; border-radius: 999px; }
+.sos-submit-button { position: sticky; bottom: 0; z-index: 1; margin-top: .5rem; border: 1px solid rgba(254, 202, 202, .35); }
+@media (max-width: 640px) { .sos-report-backdrop { align-items: stretch; }.sos-report-panel { max-height: 100dvh; min-height: 100dvh; }.sos-report-form { padding-bottom: .75rem; }.sos-report-panel > div:first-child { padding-bottom: 1rem; } }
+
 /* Audio wave animation */
 .sound-bar {
   display: inline-block;
