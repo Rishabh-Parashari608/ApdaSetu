@@ -10,6 +10,9 @@ window.ApdaProfileSettings = {
       emergencyContact: '+91 98765 11111 (Son: Aarav)',
       medicalNotes: 'Asthma patient in household, 8-month-old infant requiring formula'
     };
+    const savedLocation = (user.city || 'Guwahati, Assam').split(',').map(part => part.trim());
+    const city = user.cityName || savedLocation[0] || 'Guwahati';
+    const state = user.state || savedLocation[1] || 'Assam';
 
     return `
       <div class="space-y-6">
@@ -20,9 +23,6 @@ window.ApdaProfileSettings = {
             <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
               <span>👤</span> Emergency Profile & Medical ID
             </h2>
-            <p class="text-xs text-slate-400 mt-1">
-              Critical triage information automatically shared with First Responders and Trauma Ambulances during SOS.
-            </p>
           </div>
         </div>
 
@@ -47,7 +47,13 @@ window.ApdaProfileSettings = {
 
               <div class="sm:col-span-2">
                 <label class="block text-xs font-bold text-slate-300 mb-1">Current Residence / Disaster Sector</label>
-                <input type="text" id="prof-city" value="${user.city || 'Guwahati, Assam'}" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input type="text" id="prof-locality" value="${user.locality || 'Hatigaon By-lane 3'}" required placeholder="Locality / landmark" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+                  <input type="text" id="prof-city" value="${city}" required placeholder="Village or city" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+                  <input type="text" id="prof-district" value="${user.district || 'Kamrup Metropolitan'}" required placeholder="District" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+                  <input type="text" id="prof-state" value="${state}" required placeholder="State" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+                  <input type="text" id="prof-pincode" value="${user.pincode || '781038'}" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="Pincode" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+                </div>
               </div>
             </div>
           </div>
@@ -128,7 +134,12 @@ window.ApdaProfileSettings = {
       ...(window.ApdaState.currentUser || {}),
       name: document.getElementById('prof-name').value,
       phone: document.getElementById('prof-phone').value,
-      city: document.getElementById('prof-city').value,
+      locality: document.getElementById('prof-locality').value,
+      cityName: document.getElementById('prof-city').value,
+      district: document.getElementById('prof-district').value,
+      state: document.getElementById('prof-state').value,
+      pincode: document.getElementById('prof-pincode').value,
+      city: `${document.getElementById('prof-city').value}, ${document.getElementById('prof-state').value}`,
       bloodGroup: document.getElementById('prof-blood').value,
       emergencyContact: document.getElementById('prof-contact').value,
       medicalNotes: document.getElementById('prof-med').value
