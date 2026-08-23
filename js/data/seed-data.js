@@ -90,6 +90,7 @@ window.ApdaSeedData = {
     {
       id: 'SHL-01',
       name: 'Kamrup Central Relief Hub & School Ground',
+      type: 'School',
       state: 'Assam',
       location: 'Beltola, Guwahati, Assam',
       coordinates: [26.1345, 91.7862],
@@ -150,6 +151,7 @@ window.ApdaSeedData = {
     {
       id: 'SHL-05',
       name: 'Dharavi Sports Complex Relief Shelter',
+      type: 'Safe Zone',
       state: 'Maharashtra',
       location: 'Sion Bandra Link Rd, Mumbai',
       coordinates: [19.0430, 72.8580],
@@ -161,6 +163,38 @@ window.ApdaSeedData = {
       facilities: ['Dewatered Dry Halls', 'Pediatric Medical Aid', 'Meals on Wheels', 'Emergency Sanitization'],
       verifiedBy: 'BMC Disaster Control',
       distanceKm: '5.0 km'
+    },
+    {
+      id: 'SHL-06',
+      name: 'Guwahati Medical College (GMCH) Relief Wing',
+      type: 'Hospital',
+      state: 'Assam',
+      location: 'Bhangagarh, Guwahati, Assam',
+      coordinates: [26.1550, 91.7650],
+      totalCapacity: 150,
+      occupied: 80,
+      contactPerson: 'Dr. Ramesh Talukdar',
+      phone: '+91 94350 11222',
+      status: 'Open',
+      facilities: ['Trauma Center', 'ICU Beds', 'Ambulance Support', '24/7 Pharmacy'],
+      verifiedBy: 'Health Dept Assam',
+      distanceKm: '2.5 km'
+    },
+    {
+      id: 'SHL-07',
+      name: 'Nilachal Hill Elevated Safe Zone',
+      type: 'Safe Zone',
+      state: 'Assam',
+      location: 'Kamakhya Temple Rd, Guwahati',
+      coordinates: [26.1660, 91.7050],
+      totalCapacity: 600,
+      occupied: 210,
+      contactPerson: 'Temple Trust Rescue Team',
+      phone: '+91 98640 88990',
+      status: 'Open',
+      facilities: ['High Altitude', 'Food Distribution', 'Helipad', 'Tents Available'],
+      verifiedBy: 'Assam SDMA',
+      distanceKm: '6.0 km'
     }
   ],
 

@@ -3,6 +3,7 @@
 window.ApdaShelterMap = {
   leafletMap: null,
   activeNavigationShelter: null,
+  routingLine: null,
 
   getEffectiveLocation() {
     const user = window.ApdaState.currentUser || {};
@@ -92,7 +93,7 @@ window.ApdaShelterMap = {
                   <div class="flex items-start justify-between gap-2">
                     <div>
                       <h4 class="font-extrabold text-sm text-white">${s.name}</h4>
-                      <p class="text-xs text-slate-400 mt-0.5">📍 ${s.location}</p>
+                      <p class="text-xs text-slate-400 mt-0.5">📍 ${s.location} <span class="ml-1 px-1.5 py-0.5 bg-slate-800 rounded text-[10px] text-cyan-300 font-bold border border-slate-700">${s.type || 'Safe Zone'}</span></p>
                     </div>
                     <span class="px-2 py-0.5 rounded text-[11px] font-bold ${isHigh ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}">
                       ${vacancy} Spots Open
@@ -166,7 +167,7 @@ window.ApdaShelterMap = {
         marker.bindPopup(`
           <div style="font-family: inherit; color: #0f172a; padding: 4px;">
             <h4 style="margin: 0; font-weight: bold; font-size: 14px;">${s.name}</h4>
-            <p style="margin: 4px 0; font-size: 12px; color: #475569;">📍 ${s.location}</p>
+            <p style="margin: 4px 0; font-size: 12px; color: #475569;">📍 ${s.location} <br><span style="display:inline-block; margin-top:3px; background:#1e293b; color:#67e8f9; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold;">${s.type || 'Safe Zone'}</span></p>
             <div style="background: #ecfdf5; border: 1px solid #10b981; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #065f46; margin: 6px 0;">
               ✓ ${vacancy} Available Beds (${s.occupied}/${s.totalCapacity})
             </div>
@@ -208,6 +209,19 @@ window.ApdaShelterMap = {
 
     if (this.leafletMap && s.coordinates) {
       this.leafletMap.flyTo(s.coordinates, 14, { duration: 1.2 });
+      
+      if (this.routingLine) {
+        this.leafletMap.removeLayer(this.routingLine);
+      }
+      const userLoc = this.getEffectiveLocation();
+      this.routingLine = L.polyline([userLoc, s.coordinates], {
+        color: '#10b981',
+        weight: 5,
+        opacity: 0.8,
+        dashArray: '10, 10'
+      }).addTo(this.leafletMap);
+      
+      this.leafletMap.fitBounds(this.routingLine.getBounds(), { padding: [50, 50] });
     }
 
     if (window.ApdaState) {
