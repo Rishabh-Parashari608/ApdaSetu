@@ -72,16 +72,6 @@ window.ApdaNavbar = {
               </select>
             </div>
 
-            <!-- Accessibility Settings Dropdown/Toggle -->
-            <div class="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700">
-              <button onclick="window.ApdaOfflineManager.toggleHighContrast()" title="Toggle High Contrast" class="p-1.5 rounded-lg hover:bg-slate-700 text-xs text-yellow-300">
-                👁️
-              </button>
-              <button onclick="window.ApdaOfflineManager.toggleLowBandwidth()" title="Toggle Low Bandwidth Mode" class="p-1.5 rounded-lg hover:bg-slate-700 text-xs text-emerald-300">
-                📶
-              </button>
-            </div>
-
             <!-- Auth / User Indicator -->
             ${user ? `
               <div class="flex items-center gap-2 pl-1 sm:pl-2 border-l border-white/10">
