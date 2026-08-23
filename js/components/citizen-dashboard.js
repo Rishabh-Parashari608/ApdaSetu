@@ -11,15 +11,27 @@ window.ApdaCitizenDashboard = {
     requestAnimationFrame(() => modal.classList.add('is-open'));
     this.selectForecast('Today', '28', '72', 'Heavy rain expected. Keep an umbrella handy and plan travel carefully.');
   },
+  toggleCalendar() {
+    const calendar = document.getElementById('apd-forecast-calendar');
+    if (calendar) calendar.classList.toggle('is-open');
+  },
   selectForecast(day, temp, rain, message) {
     const detail = document.getElementById('apd-forecast-detail');
     const selectedDay = document.getElementById('apd-forecast-selected-day');
     const selectedTemp = document.getElementById('apd-forecast-selected-temp');
-    const selectedRain = document.getElementById('apd-forecast-selected-rain');
     if (detail) detail.textContent = `${day}: ${message}`;
     if (selectedDay) selectedDay.textContent = day;
     if (selectedTemp) selectedTemp.textContent = `${temp}°C`;
-    if (selectedRain) selectedRain.textContent = `${rain}%`;
+  },
+  selectCalendarDate(button, dateLabel) {
+    document.querySelectorAll('.apd-calendar-day.is-selected').forEach(day => day.classList.remove('is-selected'));
+    button.classList.add('is-selected');
+    const selectedDate = document.getElementById('apd-forecast-calendar-date');
+    const detail = document.getElementById('apd-forecast-detail');
+    if (selectedDate) selectedDate.textContent = dateLabel;
+    if (detail) detail.textContent = `${dateLabel}: Forecast selected. Temperature and conditions will update for your chosen date.`;
+    const calendar = document.getElementById('apd-forecast-calendar');
+    if (calendar) calendar.classList.remove('is-open');
   },
   render() {
     const activeTab = window.ApdaState.citizenTab;
@@ -66,6 +78,11 @@ window.ApdaCitizenDashboard = {
 
     const openAlerts = window.ApdaState.alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
     const firstName = user.name.split(' ')[0];
+    const calendarDate = new Date();
+    const calendarMonth = calendarDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+    const daysInMonth = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 0).getDate();
+    const firstWeekday = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1).getDay();
+    const calendarDays = `${'<span></span>'.repeat(firstWeekday)}${Array.from({ length: daysInMonth }, (_, i) => { const day = i + 1; const selected = day === calendarDate.getDate() ? ' is-selected' : ''; return `<button type="button" class="apd-calendar-day${selected}" onclick="window.ApdaCitizenDashboard.selectCalendarDate(this, '${calendarMonth} ${day}')">${day}</button>`; }).join('')}`;
 
     return `
       <style>
@@ -162,9 +179,9 @@ window.ApdaCitizenDashboard = {
         .apd-greeting-row { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.5rem 0 0.5rem; }
         .apd-greeting { min-width: 0; }
         .apd-profile-summary { display: flex; flex-direction: column; align-items: flex-start; }
-        .apd-profile-avatar { width: 58px; height: 58px; border-radius: 18px; background: linear-gradient(135deg, #1e3a5f, #1e40af); display: grid; place-items: center; overflow: hidden; color: #fff; border: 2px solid rgba(56,189,248,.22); font-size: 1.15rem; font-weight: 800; box-shadow: 0 8px 20px rgba(30,64,175,.2); }
+        .apd-profile-avatar { width: 96px; height: 96px; border-radius: 28px; background: linear-gradient(135deg, #1e3a5f, #1e40af); display: grid; place-items: center; overflow: hidden; color: #fff; border: 2px solid rgba(56,189,248,.22); font-size: 1.5rem; font-weight: 800; box-shadow: 0 12px 28px rgba(30,64,175,.25); }
         .apd-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .apd-profile-name { margin-top: 0.625rem; color: #f8fafc; font-size: 1rem; font-weight: 800; }
+        .apd-profile-name { margin-top: 0.75rem; color: #f8fafc; font-size: 1.25rem; font-weight: 800; }
         .apd-profile-address { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.25rem; color: #64748b; font-size: 0.75rem; font-weight: 600; }
         .apd-profile-address svg { width: 14px; height: 14px; color: #38bdf8; }
 
@@ -189,15 +206,25 @@ window.ApdaCitizenDashboard = {
         .apd-forecast-key { display: inline-flex; align-items: center; gap: 0.375rem; }
         .apd-forecast-key i { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
         .apd-forecast-chart { width: 100%; height: auto; display: block; overflow: visible; }
-        .apd-forecast-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.625rem; margin: 0 0 1rem; }
+        .apd-forecast-summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.625rem; margin: 0 0 1rem; }
         .apd-forecast-stat { padding: 0.75rem; border: 1px solid rgba(148,163,184,0.1); border-radius: 10px; background: linear-gradient(135deg, rgba(30,41,59,0.75), rgba(15,23,42,0.45)); }
         .apd-forecast-stat-label { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #64748b; }
         .apd-forecast-stat-value { margin-top: 0.25rem; font-size: 1rem; font-weight: 800; color: #f8fafc; }
         .apd-forecast-detail { min-height: 45px; margin-top: 1rem; padding: 0.75rem 0.875rem; border-radius: 10px; background: rgba(14,116,144,0.12); border: 1px solid rgba(56,189,248,0.16); color: #bae6fd; font-size: 0.8125rem; transition: all 0.25s ease; }
+        .apd-calendar-toggle { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 0.75rem; border: 1px solid rgba(56,189,248,0.3); border-radius: 8px; background: rgba(14,116,144,0.14); color: #bae6fd; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+        .apd-calendar-toggle:hover { background: rgba(14,116,144,0.28); }
+        .apd-forecast-calendar { position: fixed; inset: 0; z-index: 220; display: none; align-items: center; justify-content: center; padding: 1.25rem; background: rgba(2,6,23,0.82); backdrop-filter: blur(6px); }
+        .apd-forecast-calendar.is-open { display: flex; }
+        .apd-calendar-page { width: min(520px, 100%); padding: 1.25rem; border: 1px solid rgba(56,189,248,0.25); border-radius: 16px; background: #111c31; box-shadow: 0 24px 64px rgba(0,0,0,0.5); }
+        .apd-calendar-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.625rem; color: #cbd5e1; font-size: 0.75rem; font-weight: 700; }
+        .apd-calendar-weekdays, .apd-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.25rem; }
+        .apd-calendar-weekdays { margin-bottom: 0.25rem; color: #64748b; font-size: 0.625rem; font-weight: 800; text-align: center; text-transform: uppercase; }
+        .apd-calendar-day { min-height: 2rem; border: 1px solid transparent; border-radius: 8px; background: rgba(30,41,59,0.55); color: #cbd5e1; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
+        .apd-calendar-day:hover, .apd-calendar-day.is-selected { border-color: rgba(56,189,248,0.55); background: rgba(14,116,144,0.35); color: #f8fafc; }
+        @media (max-width: 500px) { .apd-calendar-day { min-height: 1.8rem; font-size: 0.6875rem; } }
         .apd-forecast-point { cursor: pointer; transition: r 0.2s ease, filter 0.2s ease; }
         .apd-forecast-point:hover { r: 7; filter: drop-shadow(0 0 6px #38bdf8); }
         .apd-forecast-modal.is-open .apd-temp-line { stroke-dasharray: 700; stroke-dashoffset: 700; animation: forecastDraw 1.1s cubic-bezier(.16,1,.3,1) forwards; }
-        .apd-forecast-modal.is-open .apd-rain-line { stroke-dasharray: 700; stroke-dashoffset: 700; animation: forecastDraw 1.25s .12s cubic-bezier(.16,1,.3,1) forwards; }
         .apd-forecast-modal.is-open .apd-forecast-point { animation: forecastPoint .45s backwards; }
         .apd-forecast-modal.is-open .apd-forecast-point:nth-child(2) { animation-delay:.08s; }.apd-forecast-modal.is-open .apd-forecast-point:nth-child(3) { animation-delay:.16s; }.apd-forecast-modal.is-open .apd-forecast-point:nth-child(4) { animation-delay:.24s; }.apd-forecast-modal.is-open .apd-forecast-point:nth-child(5) { animation-delay:.32s; }.apd-forecast-modal.is-open .apd-forecast-point:nth-child(6) { animation-delay:.4s; }.apd-forecast-modal.is-open .apd-forecast-point:nth-child(7) { animation-delay:.48s; }
         @keyframes forecastDraw { to { stroke-dashoffset: 0; } }
@@ -256,27 +283,33 @@ window.ApdaCitizenDashboard = {
                 <h2 id="apd-forecast-title" class="apd-forecast-title">7-Day Weather Forecast</h2>
                 <p class="apd-forecast-subtitle">Hatigaon, Guwahati &middot; Updated just now</p>
               </div>
-              <button type="button" class="apd-forecast-close" aria-label="Close forecast" onclick="document.getElementById('apd-forecast-modal').classList.remove('is-open')">&times;</button>
+              <div class="flex items-center gap-2">
+                <button type="button" class="apd-calendar-toggle" onclick="window.ApdaCitizenDashboard.toggleCalendar()"><span>▣</span> Calendar</button>
+                <button type="button" class="apd-forecast-close" aria-label="Close forecast" onclick="document.getElementById('apd-forecast-modal').classList.remove('is-open')">&times;</button>
+              </div>
             </div>
-            <div class="apd-forecast-legend">
-              <span class="apd-forecast-key"><i style="background:#38bdf8"></i>Temperature (&deg;C)</span>
-              <span class="apd-forecast-key"><i style="background:#818cf8"></i>Rain chance (%)</span>
-            </div>
+            <div class="apd-forecast-legend"><span class="apd-forecast-key"><i style="background:#38bdf8"></i>Temperature (&deg;C)</span></div>
             <div class="apd-forecast-summary">
               <div class="apd-forecast-stat"><div class="apd-forecast-stat-label">Selected day</div><div id="apd-forecast-selected-day" class="apd-forecast-stat-value">Today</div></div>
               <div class="apd-forecast-stat"><div class="apd-forecast-stat-label">Temperature</div><div id="apd-forecast-selected-temp" class="apd-forecast-stat-value">28&deg;C</div></div>
-              <div class="apd-forecast-stat"><div class="apd-forecast-stat-label">Rain chance</div><div id="apd-forecast-selected-rain" class="apd-forecast-stat-value">72%</div></div>
             </div>
-            <svg class="apd-forecast-chart" viewBox="0 0 620 280" role="img" aria-label="Seven-day temperature and rain chance forecast graph">
+            <svg class="apd-forecast-chart" viewBox="0 0 620 280" role="img" aria-label="Seven-day temperature forecast graph">
               <g stroke="rgba(148,163,184,0.16)" stroke-width="1"><line x1="54" y1="35" x2="590" y2="35"/><line x1="54" y1="82" x2="590" y2="82"/><line x1="54" y1="129" x2="590" y2="129"/><line x1="54" y1="176" x2="590" y2="176"/><line x1="54" y1="223" x2="590" y2="223"/></g>
               <g fill="#64748b" font-size="11" font-family="Inter, system-ui, sans-serif"><text x="16" y="39">32&deg;</text><text x="16" y="86">28&deg;</text><text x="16" y="133">24&deg;</text><text x="16" y="180">20&deg;</text><text x="55" y="249">Today</text><text x="141" y="249">Mon</text><text x="228" y="249">Tue</text><text x="315" y="249">Wed</text><text x="402" y="249">Thu</text><text x="489" y="249">Fri</text><text x="566" y="249">Sat</text></g>
               <path d="M60 111 L147 99 L234 123 L321 87 L408 99 L495 75 L582 87 L582 223 L60 223 Z" fill="rgba(56,189,248,0.10)"/>
               <polyline class="apd-temp-line" points="60,111 147,99 234,123 321,87 408,99 495,75 582,87" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-              <polyline class="apd-rain-line" points="60,72 147,91 234,62 321,109 408,100 495,119 582,82" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round"/>
               <g fill="#0f172a" stroke="#38bdf8" stroke-width="3"><circle class="apd-forecast-point" cx="60" cy="111" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Today','28','72','Heavy rain expected. Keep an umbrella handy and plan travel carefully.')"/><circle class="apd-forecast-point" cx="147" cy="99" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Monday','29','64','Cloudy intervals with showers possible in the afternoon.')"/><circle class="apd-forecast-point" cx="234" cy="123" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Tuesday','27','79','The wettest day this week; avoid low-lying routes where possible.')"/><circle class="apd-forecast-point" cx="321" cy="87" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Wednesday','30','55','Warmer and brighter, with brief evening showers.')"/><circle class="apd-forecast-point" cx="408" cy="99" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Thursday','29','58','Humid conditions with scattered showers.')"/><circle class="apd-forecast-point" cx="495" cy="75" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Friday','31','48','Warmest day of the week with lower rain probability.')"/><circle class="apd-forecast-point" cx="582" cy="87" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Saturday','30','68','Cloudy and rainy spells returning through the day.')"/></g>
               <g fill="#f8fafc" font-size="11" font-weight="700" font-family="Inter, system-ui, sans-serif"><text x="48" y="99">28&deg;</text><text x="135" y="87">29&deg;</text><text x="222" y="111">27&deg;</text><text x="309" y="75">30&deg;</text><text x="396" y="87">29&deg;</text><text x="483" y="63">31&deg;</text><text x="570" y="75">30&deg;</text></g>
             </svg>
             <div id="apd-forecast-detail" class="apd-forecast-detail">Today: Heavy rain expected. Keep an umbrella handy and plan travel carefully.</div>
+          </div>
+        </div>
+        <div id="apd-forecast-calendar" class="apd-forecast-calendar" role="dialog" aria-modal="true" aria-label="Calendar" onclick="if (event.target === this) this.classList.remove('is-open')">
+          <div class="apd-calendar-page">
+            <div class="apd-calendar-heading"><span>Calendar</span><button type="button" class="apd-forecast-close" aria-label="Close calendar" onclick="document.getElementById('apd-forecast-calendar').classList.remove('is-open')">&times;</button></div>
+            <div class="apd-calendar-heading"><span>Select a forecast date</span><span id="apd-forecast-calendar-date">${calendarMonth} ${calendarDate.getDate()}</span></div>
+            <div class="apd-calendar-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+            <div class="apd-calendar-grid">${calendarDays}</div>
           </div>
         </div>
 
