@@ -181,23 +181,51 @@ window.ApdaShelterMap = {
 
       // User location marker
       const userMarker = L.circleMarker(userLoc, {
-        radius: 8,
+        radius: 9,
         fillColor: '#ef4444',
         color: '#ffffff',
-        weight: 2,
+        weight: 3,
         opacity: 1,
-        fillOpacity: 0.9
+        fillOpacity: 1
       }).addTo(this.leafletMap);
 
-      userMarker.bindPopup('<b>Your Location</b><br>Reference Point for Alerts');
+      userMarker.bindPopup('<b>📍 Your Current Location</b><br>Reference point for distance calculations').openPopup();
+
+      // Redraw active navigation route if active
+      if (this.activeNavigationShelter && this.activeNavigationShelter.coordinates) {
+        this.drawRoute(userLoc, this.activeNavigationShelter.coordinates);
+      }
 
     } catch (e) {
       console.warn('Leaflet map initialization warning:', e);
     }
   },
 
+  drawRoute(fromCoords, toCoords) {
+    if (!this.leafletMap) return;
+    if (this.routingLine) {
+      this.leafletMap.removeLayer(this.routingLine);
+      this.routingLine = null;
+    }
+
+    // High visibility route line
+    this.routingLine = L.polyline([fromCoords, toCoords], {
+      color: '#06b6d4',
+      weight: 6,
+      opacity: 0.95,
+      dashArray: '10, 10',
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(this.leafletMap);
+
+    const bounds = this.routingLine.getBounds();
+    if (bounds.isValid()) {
+      this.leafletMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
+    }
+  },
+
   startNavigation(shelterId) {
-    const s = this.getFilteredShelters().find(item => item.id === shelterId);
+    const s = this.getFilteredShelters().find(item => item.id === shelterId) || window.ApdaState.shelters.find(item => item.id === shelterId);
     if (!s) return;
     this.activeNavigationShelter = s;
 
@@ -207,23 +235,19 @@ window.ApdaShelterMap = {
       banner.innerHTML = this.renderNavigationBanner();
     }
 
+    const userLoc = this.getEffectiveLocation();
     if (this.leafletMap && s.coordinates) {
-      if (this.routingLine) {
-        this.leafletMap.removeLayer(this.routingLine);
-      }
-      const userLoc = this.getEffectiveLocation();
-      this.routingLine = L.polyline([userLoc, s.coordinates], {
-        color: '#10b981',
-        weight: 5,
-        opacity: 0.8,
-        dashArray: '10, 10'
-      }).addTo(this.leafletMap);
-      
-      this.leafletMap.fitBounds(this.routingLine.getBounds(), { padding: [50, 50] });
+      this.drawRoute(userLoc, s.coordinates);
+    }
+
+    // Smoothly scroll map into view
+    const mapCanvas = document.getElementById('shelter-map-canvas');
+    if (mapCanvas) {
+      mapCanvas.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     if (window.ApdaState) {
-      window.ApdaState.notify(`Navigation route calculated to ${s.name} (${s.distanceKm})`, 'success');
+      window.ApdaState.notify(`Safe evacuation route mapped to ${s.name} (${s.distanceKm || 'Nearby'})`, 'success');
     }
   },
 

@@ -1,5 +1,5 @@
 // Service Worker for ApdaSetu Offline Safety Guides and Critical Alerts
-const CACHE_NAME = 'apdasetu-v1.4.3';
+const CACHE_NAME = 'apdasetu-v1.5.0';
 const OFFLINE_URLS = [
   './',
   './index.html',
@@ -16,6 +16,7 @@ const OFFLINE_URLS = [
   './js/components/navbar.js',
   './js/components/homepage.js',
   './js/components/auth-modal.js',
+  './js/components/emergency-call-modal.js',
   './js/components/sos-modal.js',
   './js/components/live-alerts.js',
   './js/components/shelter-map.js',
@@ -25,8 +26,7 @@ const OFFLINE_URLS = [
   './js/components/safety-guides.js',
   './js/components/community-updates.js',
   './js/components/profile-settings.js',
-  './js/components/responder-dashboard.js',
-  './js/components/emergency-call-modal.js'
+  './js/components/responder-dashboard.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -34,7 +34,7 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[ApdaSetu SW] Pre-caching offline critical assets');
       return cache.addAll(OFFLINE_URLS).catch(err => {
-        console.warn('[ApdaSetu SW] Precache non-critical fetch issue (fallback enabled):', err);
+        console.warn('[ApdaSetu SW] Precache issue:', err);
       });
     }).then(() => self.skipWaiting())
   );
@@ -55,35 +55,29 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Network First strategy: fetch latest from network, fallback to cache if offline
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Return cache first, refresh in background
-        fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
-          }
-        }).catch(() => {/* Offline */});
-        return cachedResponse;
-      }
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
         }
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
         return networkResponse;
-      }).catch(() => {
-        // Return fallback if applicable
-        if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
-          return caches.match('./index.html');
-        }
-      });
-    })
+      })
+      .catch(() => {
+        // If offline or fetch fails, use cache
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
+            return caches.match('./index.html');
+          }
+        });
+      })
   );
 });
