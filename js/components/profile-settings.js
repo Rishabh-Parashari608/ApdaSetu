@@ -20,12 +20,20 @@ window.ApdaProfileSettings = {
       <div class="space-y-6">
         
         <!-- Header -->
-        <div class="glass-panel p-6 rounded-2xl border border-white/10 flex items-center justify-between">
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
               <span>👤</span> Emergency Profile & Medical ID
             </h2>
           </div>
+          <label class="flex items-center gap-3 cursor-pointer group" title="Set profile picture">
+            <span class="relative w-14 h-14 rounded-2xl overflow-hidden border border-cyan-300/35 bg-slate-800 flex items-center justify-center text-xl font-black text-cyan-200">
+              ${user.profileImage ? `<img id="profile-photo-preview" src="${user.profileImage}" alt="Profile picture" class="w-full h-full object-cover">` : `<span id="profile-photo-placeholder">${user.name ? user.name.charAt(0) : 'P'}</span>`}
+              <span class="absolute inset-0 grid place-items-center bg-slate-950/60 opacity-0 group-hover:opacity-100 text-[10px] font-bold transition-opacity">Edit</span>
+            </span>
+            <span><span class="block text-xs font-extrabold text-cyan-200">Set profile picture</span><span class="block text-[10px] text-slate-400 mt-0.5">JPG, PNG, or WebP (max 2 MB)</span></span>
+            <input type="file" accept="image/png,image/jpeg,image/webp" onchange="window.ApdaProfileSettings.handleProfileImage(this)" class="hidden">
+          </label>
         </div>
 
         <form onsubmit="window.ApdaProfileSettings.handleSave(event)" class="space-y-6">
@@ -177,6 +185,30 @@ window.ApdaProfileSettings = {
     const relation = document.getElementById('prof-contact-relation').value.trim();
     const phone = document.getElementById('prof-contact-phone').value.trim();
     return name && relation && phone ? { name, relation, phone } : null;
+  },
+
+  handleProfileImage(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) {
+      window.ApdaState.notify('Choose a JPG, PNG, or WebP image smaller than 2 MB.', 'warning');
+      input.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = event => {
+      const existing = window.ApdaState.currentUser || { name: 'Priya Sharma', phone: '+91 98765 43210', city: 'Guwahati, Assam' };
+      window.ApdaState.currentUser = { ...existing, profileImage: event.target.result };
+      localStorage.setItem('apdasetu_user', JSON.stringify(window.ApdaState.currentUser));
+      const preview = document.getElementById('profile-photo-preview');
+      if (preview) preview.src = event.target.result;
+      else {
+        const holder = document.getElementById('profile-photo-placeholder');
+        if (holder) holder.outerHTML = `<img id="profile-photo-preview" src="${event.target.result}" alt="Profile picture" class="w-full h-full object-cover">`;
+      }
+      window.ApdaState.notify('Profile picture updated successfully.', 'success');
+    };
+    reader.readAsDataURL(file);
   },
 
   addContact() {

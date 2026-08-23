@@ -4,8 +4,27 @@ window.ApdaShelterMap = {
   leafletMap: null,
   activeNavigationShelter: null,
 
+  getEffectiveLocation() {
+    const user = window.ApdaState.currentUser || {};
+    return (window.ApdaLiveAlerts && window.ApdaLiveAlerts.selectedLocation) || user.coordinates || [26.1480, 91.7450];
+  },
+
+  getDistanceKm(from, to) {
+    const radians = value => value * Math.PI / 180, dLat = radians(to[0] - from[0]), dLng = radians(to[1] - from[1]);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(radians(from[0])) * Math.cos(radians(to[0])) * Math.sin(dLng / 2) ** 2;
+    return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  },
+
+  getFilteredShelters() {
+    const activeLocation = this.getEffectiveLocation();
+    return window.ApdaState.shelters
+      .map(s => ({ ...s, numericDistance: this.getDistanceKm(activeLocation, s.coordinates) }))
+      .filter(s => s.numericDistance <= 20)
+      .map(s => ({ ...s, distanceKm: s.numericDistance.toFixed(1) + ' km' }));
+  },
+
   render() {
-    const shelters = window.ApdaState.shelters;
+    const shelters = this.getFilteredShelters();
 
     setTimeout(() => {
       this.initLeafletMap();
@@ -129,8 +148,9 @@ window.ApdaShelterMap = {
     }
 
     try {
-      const shelters = window.ApdaState.shelters;
-      const center = shelters[0] ? shelters[0].coordinates : [26.1445, 91.7362];
+      const shelters = this.getFilteredShelters();
+      const userLoc = this.getEffectiveLocation();
+      const center = shelters[0] ? shelters[0].coordinates : userLoc;
 
       this.leafletMap = L.map('shelter-map-canvas').setView(center, 12);
 
@@ -159,7 +179,7 @@ window.ApdaShelterMap = {
       });
 
       // User location marker
-      const userMarker = L.circleMarker([26.1480, 91.7450], {
+      const userMarker = L.circleMarker(userLoc, {
         radius: 8,
         fillColor: '#ef4444',
         color: '#ffffff',
@@ -168,7 +188,7 @@ window.ApdaShelterMap = {
         fillOpacity: 0.9
       }).addTo(this.leafletMap);
 
-      userMarker.bindPopup('<b>Your Current Location</b><br>Hatigaon Flood Sector');
+      userMarker.bindPopup('<b>Your Location</b><br>Reference Point for Alerts');
 
     } catch (e) {
       console.warn('Leaflet map initialization warning:', e);
@@ -176,7 +196,7 @@ window.ApdaShelterMap = {
   },
 
   startNavigation(shelterId) {
-    const s = window.ApdaState.shelters.find(item => item.id === shelterId);
+    const s = this.getFilteredShelters().find(item => item.id === shelterId);
     if (!s) return;
     this.activeNavigationShelter = s;
 
