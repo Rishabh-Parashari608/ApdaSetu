@@ -19,7 +19,7 @@ window.ApdaShelterMap = {
     const activeLocation = this.getEffectiveLocation();
     return window.ApdaState.shelters
       .map(s => ({ ...s, numericDistance: this.getDistanceKm(activeLocation, s.coordinates) }))
-      .filter(s => s.numericDistance <= 20)
+      .filter(s => s.numericDistance <= 50)
       .map(s => ({ ...s, distanceKm: s.numericDistance.toFixed(1) + ' km' }));
   },
 
