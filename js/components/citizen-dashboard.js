@@ -126,14 +126,6 @@ window.ApdaCitizenDashboard = {
         .apd-side-title { font-size: 0.6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; margin-bottom: 0.875rem; display: flex; align-items: center; gap: 0.5rem; }
         .apd-side-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(148,163,184,0.1), transparent); }
 
-        /* Quick Actions */
-        .apd-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-        .apd-action { padding: 0.625rem; border-radius: 10px; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(148,163,184,0.06); color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-align: center; transition: all 0.2s; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.375rem; }
-        .apd-action:hover { background: rgba(30, 41, 59, 0.7); border-color: rgba(56, 189, 248, 0.2); color: #e2e8f0; transform: translateY(-1px); }
-        .apd-action svg { width: 20px; height: 20px; }
-        .apd-action-red { background: rgba(185, 28, 28, 0.1); border-color: rgba(220, 38, 38, 0.15); color: #f87171; }
-        .apd-action-red:hover { background: rgba(185, 28, 28, 0.15); border-color: rgba(220, 38, 38, 0.25); }
-
         /* Activity Feed */
         .apd-activity-item { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.625rem 0; border-bottom: 1px solid rgba(148,163,184,0.04); transition: all 0.2s; }
         .apd-activity-item:last-child { border-bottom: none; }
@@ -161,7 +153,8 @@ window.ApdaCitizenDashboard = {
         @keyframes sosPulse { 0%,100% { box-shadow: 0 8px 24px rgba(185,28,28,0.3), 0 0 0 0 rgba(220,38,38,0.4); } 50% { box-shadow: 0 8px 24px rgba(185,28,28,0.3), 0 0 0 8px rgba(220,38,38,0); } }
 
         /* Greeting Section */
-        .apd-greeting { padding: 1.5rem 0 0.5rem; }
+        .apd-greeting-row { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.5rem 0 0.5rem; }
+        .apd-greeting { min-width: 0; }
         .apd-greeting-date { font-size: 0.75rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.375rem; }
         .apd-greeting-text { font-size: 1.5rem; font-weight: 800; color: #f8fafc; letter-spacing: -0.02em; }
         .apd-greeting-text span { color: #38bdf8; }
@@ -173,6 +166,26 @@ window.ApdaCitizenDashboard = {
         .apd-weather-desc { font-size: 0.75rem; color: #64748b; font-weight: 500; }
         .apd-weather-meta { display: flex; gap: 0.75rem; margin-top: 0.25rem; }
         .apd-weather-meta span { font-size: 0.6875rem; color: #475569; }
+        .apd-forecast-btn { width: 100%; margin-top: 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid rgba(56,189,248,0.25); border-radius: 8px; background: rgba(14,116,144,0.12); color: #7dd3fc; font-size: 0.75rem; font-weight: 700; transition: all 0.2s; cursor: pointer; }
+        .apd-forecast-btn:hover { background: rgba(14,116,144,0.22); border-color: rgba(56,189,248,0.45); color: #e0f2fe; }
+        .apd-forecast-modal { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; padding: 1.25rem; background: rgba(2,6,23,0.78); backdrop-filter: blur(5px); }
+        .apd-forecast-modal.is-open { display: flex; }
+        .apd-forecast-dialog { width: min(680px, 100%); background: #0f172a; border: 1px solid rgba(56,189,248,0.2); border-radius: 18px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); padding: 1.5rem; }
+        .apd-forecast-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+        .apd-forecast-title { font-size: 1.125rem; font-weight: 800; color: #f8fafc; }
+        .apd-forecast-subtitle { margin-top: 0.25rem; font-size: 0.75rem; color: #64748b; }
+        .apd-forecast-close { width: 30px; height: 30px; border: 0; border-radius: 8px; background: rgba(148,163,184,0.1); color: #94a3b8; font-size: 1.25rem; line-height: 1; cursor: pointer; }
+        .apd-forecast-close:hover { background: rgba(148,163,184,0.18); color: #f8fafc; }
+        .apd-forecast-legend { display: flex; gap: 1rem; margin-bottom: 0.75rem; font-size: 0.75rem; color: #94a3b8; }
+        .apd-forecast-key { display: inline-flex; align-items: center; gap: 0.375rem; }
+        .apd-forecast-key i { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
+        .apd-forecast-chart { width: 100%; height: auto; display: block; overflow: visible; }
+        .apd-greeting-weather { width: 320px; flex: 0 0 320px; }
+        @media (max-width: 639px) {
+          .apd-greeting-row { align-items: stretch; flex-direction: column; gap: 1rem; }
+          .apd-greeting-weather { width: 100%; flex-basis: auto; }
+        }
+        .apd-weather-sidebar { display: none; }
 
         /* Scrollbar */
         .apd-scroll::-webkit-scrollbar { width: 4px; }
@@ -207,9 +220,53 @@ window.ApdaCitizenDashboard = {
 
         <!-- Greeting & Date -->
         <div class="max-w-[1400px] mx-auto px-6">
-          <div class="apd-greeting">
-            <div class="apd-greeting-date">${currentDate}</div>
-            <h1 class="apd-greeting-text">${greeting}, <span>${firstName}</span>.</h1>
+          <div class="apd-greeting-row">
+            <div class="apd-greeting">
+              <div class="apd-greeting-date">${currentDate}</div>
+              <h1 class="apd-greeting-text">${greeting}, <span>${firstName}</span>.</h1>
+            </div>
+            <div class="apd-greeting-weather">
+              <div class="apd-side-card">
+                <div class="apd-side-title">Weather</div>
+                <div class="apd-weather">
+                  <div class="apd-weather-icon">&#x1F327;&#xFE0F;</div>
+                  <div>
+                    <div class="apd-weather-temp">28&deg;C</div>
+                    <div class="apd-weather-desc">Heavy Rain Expected</div>
+                    <div class="apd-weather-meta">
+                      <span>&#x1F4A7; 89% Humidity</span>
+                      <span>&#x1F4A8; 24 km/h</span>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="apd-forecast-btn" onclick="document.getElementById('apd-forecast-modal').classList.add('is-open')">View Forecast</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="apd-forecast-modal" class="apd-forecast-modal" role="dialog" aria-modal="true" aria-labelledby="apd-forecast-title" onclick="if (event.target === this) this.classList.remove('is-open')">
+          <div class="apd-forecast-dialog">
+            <div class="apd-forecast-head">
+              <div>
+                <h2 id="apd-forecast-title" class="apd-forecast-title">7-Day Weather Forecast</h2>
+                <p class="apd-forecast-subtitle">Hatigaon, Guwahati &middot; Updated just now</p>
+              </div>
+              <button type="button" class="apd-forecast-close" aria-label="Close forecast" onclick="document.getElementById('apd-forecast-modal').classList.remove('is-open')">&times;</button>
+            </div>
+            <div class="apd-forecast-legend">
+              <span class="apd-forecast-key"><i style="background:#38bdf8"></i>Temperature (&deg;C)</span>
+              <span class="apd-forecast-key"><i style="background:#818cf8"></i>Rain chance (%)</span>
+            </div>
+            <svg class="apd-forecast-chart" viewBox="0 0 620 280" role="img" aria-label="Seven-day temperature and rain chance forecast graph">
+              <g stroke="rgba(148,163,184,0.16)" stroke-width="1"><line x1="54" y1="35" x2="590" y2="35"/><line x1="54" y1="82" x2="590" y2="82"/><line x1="54" y1="129" x2="590" y2="129"/><line x1="54" y1="176" x2="590" y2="176"/><line x1="54" y1="223" x2="590" y2="223"/></g>
+              <g fill="#64748b" font-size="11" font-family="Inter, system-ui, sans-serif"><text x="16" y="39">32&deg;</text><text x="16" y="86">28&deg;</text><text x="16" y="133">24&deg;</text><text x="16" y="180">20&deg;</text><text x="55" y="249">Today</text><text x="141" y="249">Mon</text><text x="228" y="249">Tue</text><text x="315" y="249">Wed</text><text x="402" y="249">Thu</text><text x="489" y="249">Fri</text><text x="566" y="249">Sat</text></g>
+              <path d="M60 111 L147 99 L234 123 L321 87 L408 99 L495 75 L582 87 L582 223 L60 223 Z" fill="rgba(56,189,248,0.10)"/>
+              <polyline points="60,111 147,99 234,123 321,87 408,99 495,75 582,87" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="60,72 147,91 234,62 321,109 408,100 495,119 582,82" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round"/>
+              <g fill="#0f172a" stroke="#38bdf8" stroke-width="3"><circle cx="60" cy="111" r="4"/><circle cx="147" cy="99" r="4"/><circle cx="234" cy="123" r="4"/><circle cx="321" cy="87" r="4"/><circle cx="408" cy="99" r="4"/><circle cx="495" cy="75" r="4"/><circle cx="582" cy="87" r="4"/></g>
+              <g fill="#f8fafc" font-size="11" font-weight="700" font-family="Inter, system-ui, sans-serif"><text x="48" y="99">28&deg;</text><text x="135" y="87">29&deg;</text><text x="222" y="111">27&deg;</text><text x="309" y="75">30&deg;</text><text x="396" y="87">29&deg;</text><text x="483" y="63">31&deg;</text><text x="570" y="75">30&deg;</text></g>
+            </svg>
           </div>
         </div>
 
@@ -295,7 +352,7 @@ window.ApdaCitizenDashboard = {
           <div class="apd-side">
 
             <!-- Weather Widget -->
-            <div class="apd-side-card">
+            <div class="apd-side-card apd-weather-sidebar">
               <div class="apd-side-title">Weather</div>
               <div class="apd-weather">
                 <div class="apd-weather-icon">🌧️</div>
@@ -307,29 +364,6 @@ window.ApdaCitizenDashboard = {
                     <span>💨 24 km/h</span>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="apd-side-card">
-              <div class="apd-side-title">Quick Actions</div>
-              <div class="apd-actions">
-                <button onclick="window.ApdaSOSModal.openReportModal()" class="apd-action apd-action-red">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                  <span>Report</span>
-                </button>
-                <button onclick="window.ApdaState.setCitizenTab('family')" class="apd-action">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-                  <span>Family</span>
-                </button>
-                <button onclick="window.ApdaState.setCitizenTab('guides')" class="apd-action">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                  <span>Guides</span>
-                </button>
-                <button onclick="window.ApdaState.setCitizenTab('chat')" class="apd-action">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                  <span>Chat</span>
-                </button>
               </div>
             </div>
 
