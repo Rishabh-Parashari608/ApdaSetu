@@ -13,6 +13,8 @@ window.ApdaProfileSettings = {
     const savedLocation = (user.city || 'Guwahati, Assam').split(',').map(part => part.trim());
     const city = user.cityName || savedLocation[0] || 'Guwahati';
     const state = user.state || savedLocation[1] || 'Assam';
+    const emergencyContacts = user.emergencyContacts || [];
+    const primaryContact = emergencyContacts[0] || { name: 'Aarav', relation: 'Son', phone: '+91 98765 11111' };
 
     return `
       <div class="space-y-6">
@@ -74,16 +76,33 @@ window.ApdaProfileSettings = {
                 </select>
               </div>
 
-              <div>
-                <label class="block text-xs font-bold text-slate-300 mb-1">Primary Emergency Contact</label>
-                <input type="text" id="prof-contact" value="${user.emergencyContact || '+91 98765 11111 (Aarav - Son)'}" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
-              </div>
-
               <div class="sm:col-span-2">
                 <label class="block text-xs font-bold text-slate-300 mb-1">Chronic Conditions / Mobility / Allergies / Infants</label>
                 <textarea id="prof-med" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-red-500">${user.medicalNotes || 'Asthma patient in household, 8-month infant'}</textarea>
               </div>
             </div>
+          </div>
+
+          <!-- Emergency Contacts -->
+          <div class="glass-panel p-6 rounded-3xl border border-white/10 space-y-4">
+            <h3 class="font-extrabold text-sm text-white flex items-center gap-2 pb-2 border-b border-white/10">
+              <span>☎</span> My Emergency Contacts
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Name</label>
+                <input type="text" id="prof-contact-name" value="${primaryContact.name}" placeholder="Contact name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Relation</label>
+                <input type="text" id="prof-contact-relation" value="${primaryContact.relation}" placeholder="e.g. Parent, Friend" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Contact No.</label>
+                <input type="tel" id="prof-contact-phone" value="${primaryContact.phone}" placeholder="Phone number" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+              </div>
+            </div>
+            <button type="button" onclick="window.ApdaProfileSettings.addContact()" class="px-5 py-2.5 border border-red-400/60 text-red-300 hover:bg-red-500/10 font-extrabold text-xs rounded-xl transition-all">Add Contact</button>
           </div>
 
           <!-- Notification Channel Preferences -->
@@ -120,7 +139,7 @@ window.ApdaProfileSettings = {
           </div>
 
           <button type="submit" class="px-8 py-3.5 bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs rounded-xl shadow-xl shadow-red-600/30 uppercase tracking-wider transition-all">
-            Save Medical Profile & Preferences
+            Save
           </button>
         </form>
 
@@ -130,6 +149,8 @@ window.ApdaProfileSettings = {
 
   handleSave(e) {
     e.preventDefault();
+    const existingContacts = (window.ApdaState.currentUser || {}).emergencyContacts || [];
+    const contact = this.getContactDraft();
     const updated = {
       ...(window.ApdaState.currentUser || {}),
       name: document.getElementById('prof-name').value,
@@ -141,12 +162,34 @@ window.ApdaProfileSettings = {
       pincode: document.getElementById('prof-pincode').value,
       city: `${document.getElementById('prof-city').value}, ${document.getElementById('prof-state').value}`,
       bloodGroup: document.getElementById('prof-blood').value,
-      emergencyContact: document.getElementById('prof-contact').value,
+      emergencyContacts: contact ? [contact, ...existingContacts.slice(1)] : existingContacts,
+      emergencyContact: contact ? `${contact.phone} (${contact.relation}: ${contact.name})` : '',
       medicalNotes: document.getElementById('prof-med').value
     };
 
     window.ApdaState.currentUser = updated;
     localStorage.setItem('apdasetu_user', JSON.stringify(updated));
     window.ApdaState.notify('Emergency Medical ID & Profile saved successfully', 'success');
+  },
+
+  getContactDraft() {
+    const name = document.getElementById('prof-contact-name').value.trim();
+    const relation = document.getElementById('prof-contact-relation').value.trim();
+    const phone = document.getElementById('prof-contact-phone').value.trim();
+    return name && relation && phone ? { name, relation, phone } : null;
+  },
+
+  addContact() {
+    const contact = this.getContactDraft();
+    if (!contact) {
+      window.ApdaState.notify('Enter a name, relation, and contact number first.', 'warning');
+      return;
+    }
+    const user = window.ApdaState.currentUser || {};
+    const contacts = user.emergencyContacts || [];
+    window.ApdaState.currentUser = { ...user, emergencyContacts: [...contacts, contact] };
+    localStorage.setItem('apdasetu_user', JSON.stringify(window.ApdaState.currentUser));
+    ['prof-contact-name', 'prof-contact-relation', 'prof-contact-phone'].forEach(id => { document.getElementById(id).value = ''; });
+    window.ApdaState.notify('Emergency contact added. You can add another or press Save.', 'success');
   }
 };

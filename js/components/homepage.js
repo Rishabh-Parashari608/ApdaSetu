@@ -30,19 +30,19 @@ window.ApdaHomepage = {
         <!-- Hero Section -->
         <section class="relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <!-- Background Glows -->
-          <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-red-600/15 rounded-full blur-3xl pointer-events-none"></div>
-          <div class="absolute top-1/3 right-10 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute top-1/3 right-10 w-72 h-72 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
           <div class="text-center relative z-10 max-w-3xl mx-auto">
             
-            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-600/15 border border-red-500/30 text-red-400 text-xs font-bold mb-6">
-              <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-400/10 border border-cyan-300/25 text-cyan-200 text-xs font-bold mb-6">
+              <span class="w-2 h-2 rounded-full bg-cyan-300 animate-ping"></span>
               National Multi-Agency Disaster Coordination Bridge
             </div>
 
             <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-white leading-tight">
               Rapid Alert & AI-Powered Rescue <br>
-              <span class="bg-gradient-to-r from-red-500 via-amber-400 to-red-400 bg-clip-text text-transparent">
+              <span class="bg-gradient-to-r from-cyan-300 via-sky-400 to-indigo-400 bg-clip-text text-transparent">
                 When Seconds Save Lives.
               </span>
             </h1>
@@ -73,7 +73,7 @@ window.ApdaHomepage = {
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-12 text-left">
               <div class="glass-panel p-4 rounded-2xl border border-white/10">
                 <span class="text-2xl font-black text-white">5</span>
-                <p class="text-xs text-red-400 font-semibold mt-0.5">Active Critical Zones</p>
+                <p class="text-xs text-cyan-300 font-semibold mt-0.5">Active Critical Zones</p>
                 <p class="text-[10px] text-slate-400">Assam, Odisha, UK, MH</p>
               </div>
               <div class="glass-panel p-4 rounded-2xl border border-white/10">
@@ -99,7 +99,7 @@ window.ApdaHomepage = {
         <!-- 4-Step Interactive Flow Section -->
         <section class="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-12">
-            <span class="text-xs font-extrabold text-red-400 uppercase tracking-widest block mb-2">END-TO-END WORKFLOW</span>
+            <span class="text-xs font-extrabold text-cyan-300 uppercase tracking-widest block mb-2">END-TO-END WORKFLOW</span>
             <h2 class="text-3xl font-extrabold text-white">${t('howItWorks')}</h2>
             <p class="text-xs sm:text-sm text-slate-400 mt-2">
               From the moment a citizen clicks SOS to boots on the ground and safe shelter transfer.
@@ -109,11 +109,11 @@ window.ApdaHomepage = {
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             
             <!-- Step 1 -->
-            <div class="glass-panel p-6 rounded-2xl border border-white/10 hover:border-red-500/40 transition-all relative group">
-              <div class="w-12 h-12 rounded-xl bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center text-2xl font-black mb-4 group-hover:scale-110 transition-transform">
+            <div class="glass-panel p-6 rounded-2xl border border-white/10 hover:border-cyan-400/40 transition-all relative group">
+              <div class="w-12 h-12 rounded-xl bg-cyan-500/15 text-cyan-300 border border-cyan-400/30 flex items-center justify-center text-2xl font-black mb-4 group-hover:scale-110 transition-transform">
                 📱
               </div>
-              <span class="text-xs font-bold text-red-400 uppercase tracking-wider">Step 01</span>
+              <span class="text-xs font-bold text-cyan-300 uppercase tracking-wider">Step 01</span>
               <h3 class="font-extrabold text-base text-white mt-1">${t('step1Title')}</h3>
               <p class="text-xs text-slate-400 mt-2 leading-relaxed">
                 ${t('step1Desc')}
@@ -162,7 +162,7 @@ window.ApdaHomepage = {
         <!-- Feature Highlight Cards -->
         <section class="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-12">
-            <span class="text-xs font-extrabold text-red-400 uppercase tracking-widest block mb-2">PLATFORM CAPABILITIES</span>
+            <span class="text-xs font-extrabold text-cyan-300 uppercase tracking-widest block mb-2">PLATFORM CAPABILITIES</span>
             <h2 class="text-3xl font-extrabold text-white">Built for Critical Disaster Infrastructure</h2>
           </div>
 

@@ -13,15 +13,15 @@ window.ApdaNavbar = {
           
           <!-- Logo & Brand -->
           <div class="flex items-center gap-3 cursor-pointer" onclick="window.ApdaState.setView('home')">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-red-600/30">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/25">
               <span class="text-2xl">🛡️</span>
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-red-400 bg-clip-text text-transparent">
+                <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-cyan-100 to-cyan-300 bg-clip-text text-transparent">
                   ${t('appName')}
                 </span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-600/20 text-red-400 border border-red-500/30 uppercase tracking-wider">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-400/10 text-cyan-200 border border-cyan-300/25 uppercase tracking-wider">
                   Live Triage
                 </span>
               </div>
@@ -36,10 +36,10 @@ window.ApdaNavbar = {
             <button onclick="window.ApdaState.setView('home')" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${window.ApdaState.currentView === 'home' ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5'}">
               Home
             </button>
-            <button onclick="window.ApdaState.setView('citizen'); window.ApdaState.setCitizenTab('alerts');" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${window.ApdaState.currentView === 'citizen' ? 'bg-red-600/30 text-red-300 border border-red-500/30' : 'text-slate-300 hover:text-white hover:bg-white/5'}">
+            <button onclick="window.ApdaState.setView('citizen'); window.ApdaState.setCitizenTab('alerts');" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${window.ApdaState.currentView === 'citizen' ? 'bg-cyan-400/15 text-cyan-100 border border-cyan-300/25' : 'text-slate-300 hover:text-white hover:bg-white/5'}">
               Citizen Dashboard
             </button>
-            <button onclick="window.ApdaState.setView('responder');" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${window.ApdaState.currentView === 'responder' ? 'bg-amber-600/30 text-amber-300 border border-amber-500/30' : 'text-slate-300 hover:text-white hover:bg-white/5'}">
+            <button onclick="window.ApdaState.setView('responder');" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${window.ApdaState.currentView === 'responder' ? 'bg-indigo-500/20 text-indigo-100 border border-indigo-300/25' : 'text-slate-300 hover:text-white hover:bg-white/5'}">
               Responder Command ⚡
             </button>
           </div>
