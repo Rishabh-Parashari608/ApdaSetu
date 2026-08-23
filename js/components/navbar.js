@@ -31,19 +31,6 @@ window.ApdaNavbar = {
             </div>
           </div>
 
-          <!-- Central Quick Links (When logged in) -->
-          <div class="hidden md:flex items-center gap-1">
-            <button onclick="window.ApdaState.setView('home')" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${window.ApdaState.currentView === 'home' ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5'}">
-              Home
-            </button>
-            <button onclick="window.ApdaState.setView('citizen'); window.ApdaState.setCitizenTab('alerts');" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${window.ApdaState.currentView === 'citizen' ? 'bg-cyan-400/15 text-cyan-100 border border-cyan-300/25' : 'text-slate-300 hover:text-white hover:bg-white/5'}">
-              Citizen Dashboard
-            </button>
-            <button onclick="window.ApdaState.setView('responder');" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${window.ApdaState.currentView === 'responder' ? 'bg-indigo-500/20 text-indigo-100 border border-indigo-300/25' : 'text-slate-300 hover:text-white hover:bg-white/5'}">
-              Responder Command ⚡
-            </button>
-          </div>
-
           <!-- Utility Controls & Actions -->
           <div class="flex items-center gap-2 sm:gap-3">
             
@@ -89,8 +76,11 @@ window.ApdaNavbar = {
                 </button>
               </div>
             ` : `
-              <button onclick="window.ApdaAuthModal.open()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold text-xs transition-all">
-                Login / Demo
+              <button onclick="window.ApdaAuthModal.open('citizen', 'login')" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold text-xs transition-all">
+                Login
+              </button>
+              <button onclick="window.ApdaAuthModal.open('citizen', 'signup')" class="px-3 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-all shadow-lg shadow-red-600/25">
+                Sign up
               </button>
             `}
 

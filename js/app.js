@@ -38,8 +38,14 @@ window.ApdaApp = {
     const appContainer = document.getElementById('app-root');
     if (!appContainer) return;
 
-    const currentView = window.ApdaState.currentView;
+    if (window.ApdaState.currentView === 'citizen' && (!window.ApdaState.currentUser || window.ApdaState.currentUser.role !== 'citizen')) {
+      window.ApdaState.currentView = 'home';
+    }
+    if (window.ApdaState.currentView === 'responder' && (!window.ApdaState.currentUser || window.ApdaState.currentUser.role !== 'responder')) {
+      window.ApdaState.currentView = 'home';
+    }
 
+    const currentView = window.ApdaState.currentView;
     let mainContent = '';
     if (currentView === 'home') {
       mainContent = window.ApdaHomepage.render();

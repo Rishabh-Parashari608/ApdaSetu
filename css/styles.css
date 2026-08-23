@@ -30,6 +30,18 @@ body {
   overflow-x: hidden;
 }
 
+.home-hero {
+  background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/74/NDRF_in_Bihar_Flood.jpg');
+  background-size: cover;
+  background-position: center;
+  border-radius: 2rem;
+  overflow: hidden;
+}
+
+.home-hero-overlay {
+  background: linear-gradient(180deg, rgba(5, 15, 31, .62), rgba(5, 15, 31, .9));
+}
+
 /* Glassmorphism Cards */
 .glass-panel {
   background: linear-gradient(145deg, rgba(22, 41, 77, .88), rgba(11, 25, 52, .82));

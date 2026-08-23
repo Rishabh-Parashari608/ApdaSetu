@@ -2,9 +2,11 @@
 
 window.ApdaAuthModal = {
   activeTab: 'demo', // 'demo' | 'citizen' | 'responder'
+  authMode: 'login', // 'login' | 'signup'
 
-  open(defaultTab = 'demo') {
+  open(defaultTab = 'demo', authMode = 'login') {
     this.activeTab = defaultTab;
+    this.authMode = authMode;
     this.close();
 
     const modal = document.createElement('div');
@@ -27,18 +29,29 @@ window.ApdaAuthModal = {
     }
   },
 
+  switchMode(mode) {
+    this.authMode = mode;
+    const modal = document.getElementById('auth-modal-backdrop');
+    if (modal) modal.innerHTML = this.renderContent();
+  },
+
   renderContent() {
     return `
       <div class="glass-panel w-full max-w-lg rounded-2xl p-6 text-white border border-white/20 shadow-2xl relative">
         <div class="flex items-center justify-between pb-3 border-b border-white/10">
           <div class="flex items-center gap-2.5">
-            <span class="text-2xl">🔐</span>
+            <span class="text-2xl">${this.authMode === 'signup' ? '📝' : '🔐'}</span>
             <div>
-              <h3 class="font-extrabold text-xl text-white">Login to ApdaSetu</h3>
-              <p class="text-xs text-slate-400">Select your role or use 1-Click Quick Demo</p>
+              <h3 class="font-extrabold text-xl text-white">${this.authMode === 'signup' ? 'Create your ApdaSetu account' : 'Login to ApdaSetu'}</h3>
+              <p class="text-xs text-slate-400">${this.authMode === 'signup' ? 'Choose the interface that matches your role' : 'Select your role or use 1-Click Quick Demo'}</p>
             </div>
           </div>
           <button onclick="window.ApdaAuthModal.close()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 font-bold">×</button>
+        </div>
+
+        <div class="flex gap-2 mt-4">
+          <button onclick="window.ApdaAuthModal.switchMode('login')" class="flex-1 py-2 rounded-lg text-xs font-bold ${this.authMode === 'login' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'}">Login</button>
+          <button onclick="window.ApdaAuthModal.switchMode('signup')" class="flex-1 py-2 rounded-lg text-xs font-bold ${this.authMode === 'signup' ? 'bg-red-600 text-white' : 'text-slate-400 hover:text-white'}">Sign up</button>
         </div>
 
         <!-- Role Tabs -->
@@ -141,7 +154,7 @@ window.ApdaAuthModal = {
           <input type="text" id="citizen-city" placeholder="e.g. Guwahati, Assam" value="Guwahati, Assam" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
         </div>
         <button type="submit" class="w-full py-3 bg-red-600 hover:bg-red-500 font-bold rounded-xl text-white text-sm shadow-lg shadow-red-600/30 transition-all mt-2">
-          Continue as Citizen →
+          ${this.authMode === 'signup' ? 'Create Citizen Account →' : 'Continue as Citizen →'}
         </button>
       </form>
     `;
@@ -170,7 +183,7 @@ window.ApdaAuthModal = {
           <input type="text" id="responder-badge" placeholder="e.g. NDRF-HQ-492" value="NDRF-HQ-492" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
         </div>
         <button type="submit" class="w-full py-3 bg-amber-600 hover:bg-amber-500 font-bold rounded-xl text-white text-sm shadow-lg shadow-amber-600/30 transition-all mt-2">
-          Open Command Dashboard →
+          ${this.authMode === 'signup' ? 'Create Responder Account →' : 'Open Command Dashboard →'}
         </button>
       </form>
     `;

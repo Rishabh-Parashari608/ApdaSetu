@@ -101,6 +101,14 @@ window.ApdaState = {
   },
 
   setView(viewName) {
+    if (viewName === 'citizen' && (!this.currentUser || this.currentUser.role !== 'citizen')) {
+      window.ApdaAuthModal.open('citizen', 'login');
+      return;
+    }
+    if (viewName === 'responder' && (!this.currentUser || this.currentUser.role !== 'responder')) {
+      window.ApdaAuthModal.open('responder', 'login');
+      return;
+    }
     this.currentView = viewName;
     window.scrollTo({ top: 0, behavior: 'smooth' });
     this.emitChange();
