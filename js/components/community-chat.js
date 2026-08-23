@@ -1,19 +1,32 @@
 // Community Help Chat Component (Disaster Event & Location Groups)
 
 window.ApdaCommunityChat = {
-  selectedTag: 'Need Water/Food',
+  selectedTags: ['Need Water/Food'],
   filterTag: 'all',
 
-  selectTag(tag) {
-    this.selectedTag = tag;
+  toggleTag(tag) {
+    if (!this.selectedTags) this.selectedTags = [];
+    const index = this.selectedTags.indexOf(tag);
+    if (index > -1) {
+      this.selectedTags.splice(index, 1);
+    } else {
+      this.selectedTags.push(tag);
+    }
+    if (this.selectedTags.length === 0) {
+      this.selectedTags = ['General Aid'];
+    }
     const btns = document.querySelectorAll('.chat-tag-selector-btn');
     btns.forEach(b => {
-      if (b.dataset.tag === tag) {
-        b.className = 'chat-tag-selector-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-red-600 text-white shadow';
+      if (this.selectedTags.includes(b.dataset.tag)) {
+        b.className = 'chat-tag-selector-btn px-2 py-0.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all bg-red-600 text-white shadow ring-1 ring-red-400';
       } else {
-        b.className = 'chat-tag-selector-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white border border-slate-700';
+        b.className = 'chat-tag-selector-btn px-2 py-0.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all bg-slate-800 text-slate-300 hover:text-white border border-slate-700';
       }
     });
+  },
+
+  selectTag(tag) {
+    this.toggleTag(tag);
   },
 
   filterByTag(tag) {
@@ -30,7 +43,8 @@ window.ApdaCommunityChat = {
 
     const messages = (room.messages || []).filter(m => {
       if (this.filterTag === 'all') return true;
-      return m.tag === this.filterTag;
+      const tagList = Array.isArray(m.tags) ? m.tags : (m.tag ? String(m.tag).split(',').map(t => t.trim()) : []);
+      return tagList.includes(this.filterTag);
     });
 
     return `
@@ -105,6 +119,7 @@ window.ApdaCommunityChat = {
               ` : messages.map(msg => {
                 const isOfficial = msg.isOfficial || msg.senderRole === 'responder';
                 const isVol = msg.senderRole === 'volunteer';
+                const tagList = Array.isArray(msg.tags) ? msg.tags : (msg.tag ? (Array.isArray(msg.tag) ? msg.tag : String(msg.tag).split(',').map(t => t.trim())) : ['General Aid']);
 
                 return `
                   <div class="p-3.5 rounded-2xl border transition-all ${msg.isModerated ? 'bg-red-950/20 border-red-800/40 opacity-60' : isOfficial ? 'bg-gradient-to-r from-red-950/40 to-slate-900 border-red-500/40 shadow-md' : isVol ? 'bg-emerald-950/20 border-emerald-500/30' : 'bg-slate-900/70 border-slate-800'}">
@@ -124,10 +139,12 @@ window.ApdaCommunityChat = {
                           </span>
                         ` : ''}
 
-                        <!-- Category Tag Badge -->
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${msg.tag.includes('Hazard') ? 'badge-critical' : msg.tag.includes('Transport') ? 'badge-low' : msg.tag.includes('Water') || msg.tag.includes('Food') ? 'badge-high' : 'bg-slate-800 text-slate-300 border border-slate-700'}">
-                          ${msg.tag}
-                        </span>
+                        <!-- Category Tag Badges -->
+                        ${tagList.map(t => `
+                          <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${t.includes('Hazard') ? 'badge-critical' : t.includes('Transport') ? 'badge-low' : t.includes('Water') || t.includes('Food') ? 'badge-high' : 'bg-slate-800 text-slate-300 border border-slate-700'}">
+                            ${t}
+                          </span>
+                        `).join(' ')}
                       </div>
 
                       <span class="text-[10px] text-slate-500 font-mono">${msg.time}</span>
@@ -159,7 +176,7 @@ window.ApdaCommunityChat = {
             <!-- Chat Input Form & Help Category Selector -->
             <div class="p-3.5 border-t border-white/10 bg-slate-900/90">
               
-              <!-- Tag Selector Buttons -->
+              <!-- Multi-Select Tag Selector Buttons -->
               <div class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-2 border-b border-white/5">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex-shrink-0">Tag:</span>
                 ${[
@@ -169,11 +186,14 @@ window.ApdaCommunityChat = {
                   'Hazard Alert',
                   'Medical Aid',
                   'General Aid'
-                ].map(tag => `
-                  <button type="button" data-tag="${tag}" onclick="window.ApdaCommunityChat.selectTag('${tag}')" class="chat-tag-selector-btn px-2 py-0.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all ${this.selectedTag === tag ? 'bg-red-600 text-white shadow' : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'}">
-                    ${tag}
-                  </button>
-                `).join('')}
+                ].map(tag => {
+                  const isSelected = (this.selectedTags || ['Need Water/Food']).includes(tag);
+                  return `
+                    <button type="button" data-tag="${tag}" onclick="window.ApdaCommunityChat.toggleTag('${tag}')" class="chat-tag-selector-btn px-2 py-0.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all ${isSelected ? 'bg-red-600 text-white shadow ring-1 ring-red-400' : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'}">
+                      ${tag}
+                    </button>
+                  `;
+                }).join('')}
               </div>
 
               <!-- Input Row -->
@@ -200,7 +220,8 @@ window.ApdaCommunityChat = {
     const input = document.getElementById('chat-input-text');
     if (!input || !input.value.trim()) return;
 
-    window.ApdaState.sendChatMessage(roomId, input.value, this.selectedTag);
+    const tags = this.selectedTags && this.selectedTags.length > 0 ? this.selectedTags : ['General Aid'];
+    window.ApdaState.sendChatMessage(roomId, input.value, tags.join(', '));
     input.value = '';
     
     // Auto scroll chat
