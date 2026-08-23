@@ -63,11 +63,6 @@ window.ApdaHomepage = {
                 <span>📍</span>
                 ${t('findShelters')}
               </button>
-
-              <button onclick="window.ApdaAuthModal.open('demo')" class="hero-secondary-cta w-full sm:w-auto px-7 py-4 rounded-2xl bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/40 text-amber-300 font-bold text-sm transition-all flex items-center justify-center gap-2">
-                <span>⚡</span>
-                Demo Responder Login
-              </button>
             </div>
 
             <!-- Fast Stat Counters -->
