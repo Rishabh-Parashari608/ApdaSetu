@@ -185,15 +185,7 @@ window.ApdaCitizenDashboard = {
 
         <!-- Sticky Header -->
         <header class="apd-header">
-          <div class="apd-header-inner">
-            <div class="apd-brand">
-              <div class="apd-logo-mark">A</div>
-              <div>
-                <div class="apd-brand-text">ApdaSetu</div>
-                <div class="apd-brand-sub">Emergency Management</div>
-              </div>
-            </div>
-
+          <div class="apd-header-inner justify-start">
             <div class="flex items-center gap-3">
               <div class="apd-loc">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -212,18 +204,6 @@ window.ApdaCitizenDashboard = {
             </div>
           </div>
         </header>
-
-        <!-- Emergency Alert Banner (conditional) -->
-        ${openAlerts > 0 ? `
-          <div class="apd-banner">
-            <div class="apd-banner-inner">
-              <div class="apd-banner-pulse"></div>
-              <svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-              <span class="apd-banner-text">${openAlerts} active emergency alert${openAlerts > 1 ? 's' : ''} in your area. Stay vigilant.</span>
-              <span class="apd-banner-count">${openAlerts} OPEN</span>
-            </div>
-          </div>
-        ` : ''}
 
         <!-- Greeting & Date -->
         <div class="max-w-[1400px] mx-auto px-6">
