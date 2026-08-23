@@ -28,7 +28,7 @@ window.ApdaHomepage = {
         </div>
 
         <!-- Hero Section -->
-        <section class="home-hero relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <section class="home-hero reveal-on-scroll relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div class="home-hero-overlay absolute inset-0 rounded-[2rem] pointer-events-none"></div>
           <!-- Background Glows -->
           <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
@@ -48,46 +48,50 @@ window.ApdaHomepage = {
               </span>
             </h1>
 
-            <p class="mt-6 text-sm sm:text-base text-slate-300 leading-relaxed">
+            <p class="mt-6 max-w-2xl mx-auto text-sm sm:text-base text-slate-300 leading-relaxed">
               ${t('missionStatement')}
             </p>
 
             <!-- Hero Action Buttons -->
             <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button onclick="window.ApdaSOSModal.openReportModal()" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:to-red-700 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-red-600/40 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3">
+              <button onclick="window.ApdaSOSModal.openReportModal()" class="hero-primary-cta w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:to-red-700 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-red-600/40 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3">
                 <span class="text-xl">🚨</span>
                 ${t('reportDisasterNow')}
               </button>
 
-              <button onclick="window.ApdaState.setView('citizen'); window.ApdaState.setCitizenTab('shelters');" class="w-full sm:w-auto px-7 py-4 rounded-2xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
+              <button onclick="window.ApdaState.setView('citizen'); window.ApdaState.setCitizenTab('shelters');" class="hero-secondary-cta w-full sm:w-auto px-7 py-4 rounded-2xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
                 <span>📍</span>
                 ${t('findShelters')}
               </button>
 
-              <button onclick="window.ApdaAuthModal.open('demo')" class="w-full sm:w-auto px-7 py-4 rounded-2xl bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/40 text-amber-300 font-bold text-sm transition-all flex items-center justify-center gap-2">
+              <button onclick="window.ApdaAuthModal.open('demo')" class="hero-secondary-cta w-full sm:w-auto px-7 py-4 rounded-2xl bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/40 text-amber-300 font-bold text-sm transition-all flex items-center justify-center gap-2">
                 <span>⚡</span>
                 Demo Responder Login
               </button>
             </div>
 
             <!-- Fast Stat Counters -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-12 text-left">
+            <div class="stats-bar reveal-on-scroll grid grid-cols-2 sm:grid-cols-4 gap-3 mt-12 p-3 sm:p-4 rounded-2xl text-left">
               <div class="glass-panel p-4 rounded-2xl border border-white/10">
+                <span class="stat-icon text-cyan-300 mb-3">⚠️</span>
                 <span class="text-2xl font-black text-white">5</span>
                 <p class="text-xs text-cyan-300 font-semibold mt-0.5">Active Critical Zones</p>
                 <p class="text-[10px] text-slate-400">Assam, Odisha, UK, MH</p>
               </div>
               <div class="glass-panel p-4 rounded-2xl border border-white/10">
+                <span class="stat-icon text-emerald-300 mb-3">🛟</span>
                 <span class="text-2xl font-black text-emerald-400">1,840+</span>
                 <p class="text-xs text-slate-300 font-semibold mt-0.5">${t('citizensRescued')}</p>
                 <p class="text-[10px] text-slate-400">Past 48 Hours</p>
               </div>
               <div class="glass-panel p-4 rounded-2xl border border-white/10">
+                <span class="stat-icon text-amber-300 mb-3">🏠</span>
                 <span class="text-2xl font-black text-amber-400">1,600 Beds</span>
                 <p class="text-xs text-slate-300 font-semibold mt-0.5">${t('activeShelters')}</p>
                 <p class="text-[10px] text-slate-400">With Live Vacancy</p>
               </div>
               <div class="glass-panel p-4 rounded-2xl border border-white/10">
+                <span class="stat-icon text-sky-300 mb-3">⏱️</span>
                 <span class="text-2xl font-black text-info-sky">11 Mins</span>
                 <p class="text-xs text-slate-300 font-semibold mt-0.5">Avg Response Time</p>
                 <p class="text-[10px] text-slate-400">AI Triage to Dispatch</p>
@@ -98,7 +102,7 @@ window.ApdaHomepage = {
         </section>
 
         <!-- 4-Step Interactive Flow Section -->
-        <section class="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <section class="reveal-on-scroll py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-12">
             <span class="text-xs font-extrabold text-cyan-300 uppercase tracking-widest block mb-2">END-TO-END WORKFLOW</span>
             <h2 class="text-3xl font-extrabold text-white">${t('howItWorks')}</h2>
@@ -161,7 +165,7 @@ window.ApdaHomepage = {
         </section>
 
         <!-- Feature Highlight Cards -->
-        <section class="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <section class="reveal-on-scroll py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-12">
             <span class="text-xs font-extrabold text-cyan-300 uppercase tracking-widest block mb-2">PLATFORM CAPABILITIES</span>
             <h2 class="text-3xl font-extrabold text-white">Built for Critical Disaster Infrastructure</h2>
@@ -227,7 +231,7 @@ window.ApdaHomepage = {
         </section>
 
         <!-- Emergency Helplines Quick Banner -->
-        <section class="py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <section class="reveal-on-scroll py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div class="glass-panel-danger rounded-3xl p-6 sm:p-8 border-2 border-red-500/50 flex flex-col md:flex-row items-center justify-between gap-6">
             <div class="flex items-center gap-4">
               <div class="w-14 h-14 rounded-2xl bg-red-600 text-white flex items-center justify-center text-3xl flex-shrink-0 animate-pulse">
