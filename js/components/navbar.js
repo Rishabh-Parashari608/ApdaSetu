@@ -20,9 +20,6 @@ window.ApdaNavbar = {
                 <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-cyan-100 to-cyan-300 bg-clip-text text-transparent">
                   ${t('appName')}
                 </span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-400/10 text-cyan-200 border border-cyan-300/25 uppercase tracking-wider">
-                  Live Triage
-                </span>
               </div>
               <p class="text-[11px] text-slate-400 font-medium hidden sm:block">
                 ${t('tagline')}

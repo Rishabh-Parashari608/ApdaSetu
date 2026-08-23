@@ -4,6 +4,23 @@
 // ═══════════════════════════════════════════════════════════════
 
 window.ApdaCitizenDashboard = {
+  showForecast() {
+    const modal = document.getElementById('apd-forecast-modal');
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    requestAnimationFrame(() => modal.classList.add('is-open'));
+    this.selectForecast('Today', '28', '72', 'Heavy rain expected. Keep an umbrella handy and plan travel carefully.');
+  },
+  selectForecast(day, temp, rain, message) {
+    const detail = document.getElementById('apd-forecast-detail');
+    const selectedDay = document.getElementById('apd-forecast-selected-day');
+    const selectedTemp = document.getElementById('apd-forecast-selected-temp');
+    const selectedRain = document.getElementById('apd-forecast-selected-rain');
+    if (detail) detail.textContent = `${day}: ${message}`;
+    if (selectedDay) selectedDay.textContent = day;
+    if (selectedTemp) selectedTemp.textContent = `${temp}°C`;
+    if (selectedRain) selectedRain.textContent = `${rain}%`;
+  },
   render() {
     const activeTab = window.ApdaState.citizenTab;
     const user = window.ApdaState.currentUser || { name: 'Priya Sharma', city: 'Hatigaon, Guwahati' };
@@ -15,6 +32,7 @@ window.ApdaCitizenDashboard = {
       { id: 'chat', label: 'Chat', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>' },
       { id: 'family', label: 'Family', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>' },
       { id: 'guides', label: 'Guides', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>' },
+      { id: 'activity', label: 'Activity', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l2.5 2.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' },
       { id: 'updates', label: 'Updates', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>' },
       { id: 'profile', label: 'Profile', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>' }
     ];
@@ -26,11 +44,21 @@ window.ApdaCitizenDashboard = {
       chat: 'ApdaCommunityChat',
       family: 'ApdaFamilyCheckin',
       guides: 'ApdaSafetyGuidesComp',
+      activity: 'ApdaRecentActivity',
       updates: 'ApdaCommunityUpdates',
       profile: 'ApdaProfileSettings'
     };
 
-    const contentHtml = window[components[activeTab] || components.alerts].render();
+    const activityHtml = `
+      <div class="space-y-2">
+        <div class="apd-activity-item"><div class="apd-activity-dot" style="background:#ef4444"></div><div><div class="apd-activity-text">Flood warning issued for Kamrup district</div><div class="apd-activity-time">12 minutes ago</div></div></div>
+        <div class="apd-activity-item"><div class="apd-activity-dot" style="background:#3b82f6"></div><div><div class="apd-activity-text">Relief camp opened at Dispur Stadium</div><div class="apd-activity-time">45 minutes ago</div></div></div>
+        <div class="apd-activity-item"><div class="apd-activity-dot" style="background:#10b981"></div><div><div class="apd-activity-text">Your request #4821 has been resolved</div><div class="apd-activity-time">2 hours ago</div></div></div>
+        <div class="apd-activity-item"><div class="apd-activity-dot" style="background:#f59e0b"></div><div><div class="apd-activity-text">Road clearance team dispatched to Beltola</div><div class="apd-activity-time">3 hours ago</div></div></div>
+      </div>`;
+    const contentHtml = activeTab === 'activity'
+      ? activityHtml
+      : window[components[activeTab] || components.alerts].render();
     const location = user.city || 'Hatigaon, Guwahati';
     const avatar = user.profileImage
       ? `<img src="${user.profileImage}" alt="${user.name}" class="w-full h-full object-cover">`
@@ -38,38 +66,11 @@ window.ApdaCitizenDashboard = {
 
     const openAlerts = window.ApdaState.alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
     const firstName = user.name.split(' ')[0];
-    const hour = new Date().getHours();
-    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    const currentDate = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
 
     return `
       <style>
         /* ═══ Professional Emergency Dashboard Styles ═══ */
         .apd-dash { font-family: 'Inter', system-ui, sans-serif; background: #0c1220; color: #f1f5f9; min-height: 100vh; }
-
-        /* Header Bar */
-        .apd-header { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(148,163,184,0.08); position: sticky; top: 0; z-index: 50; }
-        .apd-header-inner { max-width: 1400px; margin: 0 auto; padding: 0 1.5rem; height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-
-        /* Logo & Brand */
-        .apd-brand { display: flex; align-items: center; gap: 0.75rem; }
-        .apd-logo-mark { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #1e3a5f, #0f172a); border: 1px solid rgba(56, 189, 248, 0.2); display: grid; place-items: center; color: #38bdf8; font-weight: 900; font-size: 14px; box-shadow: 0 0 20px rgba(56, 189, 248, 0.1); }
-        .apd-brand-text { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.02em; color: #f8fafc; }
-        .apd-brand-sub { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: #64748b; margin-top: -2px; }
-
-        /* Location Pill */
-        .apd-loc { display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148,163,184,0.1); border-radius: 999px; font-size: 0.8125rem; color: #94a3b8; transition: all 0.2s; }
-        .apd-loc:hover { border-color: rgba(56, 189, 248, 0.25); background: rgba(30, 41, 59, 0.8); }
-        .apd-loc svg { color: #38bdf8; }
-
-        /* User Block */
-        .apd-user { display: flex; align-items: center; gap: 0.875rem; }
-        .apd-avatar { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #1e3a5f, #1e40af); display: grid; place-items: center; color: white; border: 2px solid rgba(56, 189, 248, 0.15); transition: all 0.3s; cursor: pointer; }
-        .apd-avatar:hover { border-color: rgba(56, 189, 248, 0.4); box-shadow: 0 0 15px rgba(56, 189, 248, 0.15); transform: scale(1.05); }
-        .apd-user-info { text-align: right; display: none; }
-        @media (min-width: 640px) { .apd-user-info { display: block; } }
-        .apd-user-name { font-size: 0.8125rem; font-weight: 700; color: #f1f5f9; }
-        .apd-user-role { font-size: 0.6875rem; color: #64748b; font-weight: 500; }
 
         /* Emergency Banner */
         .apd-banner { background: linear-gradient(90deg, rgba(185, 28, 28, 0.12), rgba(153, 27, 27, 0.06)); border-bottom: 1px solid rgba(185, 28, 28, 0.15); }
@@ -101,7 +102,7 @@ window.ApdaCitizenDashboard = {
 
         /* Main Grid */
         .apd-main { max-width: 1400px; margin: 0 auto; padding: 0 1.5rem 2rem; display: grid; gap: 1.5rem; }
-        @media (min-width: 1024px) { .apd-main { grid-template-columns: 1fr 320px; } }
+        @media (min-width: 1024px) { .apd-main { grid-template-columns: minmax(0, 1fr) 220px; } }
 
         /* Tab Navigation */
         .apd-tabs { display: flex; gap: 0.25rem; padding: 0.25rem; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148,163,184,0.08); border-radius: 12px; margin-bottom: 1.25rem; overflow-x: auto; scrollbar-width: none; }
@@ -111,6 +112,11 @@ window.ApdaCitizenDashboard = {
         .apd-tab.active { color: #f8fafc; background: rgba(30, 41, 59, 0.8); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
         .apd-tab.active::after { content: ''; position: absolute; bottom: -0.25rem; left: 50%; transform: translateX(-50%); width: 16px; height: 2px; background: #38bdf8; border-radius: 999px; }
         .apd-tab-badge { min-width: 18px; height: 18px; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dc2626; color: white; font-size: 0.625rem; font-weight: 800; }
+        @media (min-width: 1024px) {
+          .apd-tabs { flex-direction: column; align-items: stretch; gap: 0.25rem; margin-bottom: 0; overflow: visible; }
+          .apd-tab { width: 100%; padding: 0.625rem 0.75rem; }
+          .apd-tab.active::after { top: 50%; bottom: auto; left: -0.75rem; transform: translateY(-50%); width: 2px; height: 18px; }
+        }
 
         /* Content Panel */
         .apd-content { background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(148,163,184,0.08); border-radius: 16px; padding: 1.5rem; min-height: 500px; animation: contentFade 0.35s cubic-bezier(0.16,1,0.3,1); }
@@ -152,12 +158,15 @@ window.ApdaCitizenDashboard = {
         .apd-sos-label { font-size: 0.625rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #f87171; background: rgba(15, 23, 42, 0.9); padding: 0.25rem 0.5rem; border-radius: 6px; border: 1px solid rgba(220, 38, 38, 0.15); }
         @keyframes sosPulse { 0%,100% { box-shadow: 0 8px 24px rgba(185,28,28,0.3), 0 0 0 0 rgba(220,38,38,0.4); } 50% { box-shadow: 0 8px 24px rgba(185,28,28,0.3), 0 0 0 8px rgba(220,38,38,0); } }
 
-        /* Greeting Section */
+        /* Profile Summary */
         .apd-greeting-row { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.5rem 0 0.5rem; }
         .apd-greeting { min-width: 0; }
-        .apd-greeting-date { font-size: 0.75rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.375rem; }
-        .apd-greeting-text { font-size: 1.5rem; font-weight: 800; color: #f8fafc; letter-spacing: -0.02em; }
-        .apd-greeting-text span { color: #38bdf8; }
+        .apd-profile-summary { display: flex; flex-direction: column; align-items: flex-start; }
+        .apd-profile-avatar { width: 58px; height: 58px; border-radius: 18px; background: linear-gradient(135deg, #1e3a5f, #1e40af); display: grid; place-items: center; overflow: hidden; color: #fff; border: 2px solid rgba(56,189,248,.22); font-size: 1.15rem; font-weight: 800; box-shadow: 0 8px 20px rgba(30,64,175,.2); }
+        .apd-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .apd-profile-name { margin-top: 0.625rem; color: #f8fafc; font-size: 1rem; font-weight: 800; }
+        .apd-profile-address { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.25rem; color: #64748b; font-size: 0.75rem; font-weight: 600; }
+        .apd-profile-address svg { width: 14px; height: 14px; color: #38bdf8; }
 
         /* Weather Widget */
         .apd-weather { display: flex; align-items: center; gap: 1rem; padding: 0.875rem; background: rgba(30, 41, 59, 0.3); border-radius: 12px; border: 1px solid rgba(148,163,184,0.06); }
@@ -180,6 +189,20 @@ window.ApdaCitizenDashboard = {
         .apd-forecast-key { display: inline-flex; align-items: center; gap: 0.375rem; }
         .apd-forecast-key i { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
         .apd-forecast-chart { width: 100%; height: auto; display: block; overflow: visible; }
+        .apd-forecast-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.625rem; margin: 0 0 1rem; }
+        .apd-forecast-stat { padding: 0.75rem; border: 1px solid rgba(148,163,184,0.1); border-radius: 10px; background: linear-gradient(135deg, rgba(30,41,59,0.75), rgba(15,23,42,0.45)); }
+        .apd-forecast-stat-label { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #64748b; }
+        .apd-forecast-stat-value { margin-top: 0.25rem; font-size: 1rem; font-weight: 800; color: #f8fafc; }
+        .apd-forecast-detail { min-height: 45px; margin-top: 1rem; padding: 0.75rem 0.875rem; border-radius: 10px; background: rgba(14,116,144,0.12); border: 1px solid rgba(56,189,248,0.16); color: #bae6fd; font-size: 0.8125rem; transition: all 0.25s ease; }
+        .apd-forecast-point { cursor: pointer; transition: r 0.2s ease, filter 0.2s ease; }
+        .apd-forecast-point:hover { r: 7; filter: drop-shadow(0 0 6px #38bdf8); }
+        .apd-forecast-modal.is-open .apd-temp-line { stroke-dasharray: 700; stroke-dashoffset: 700; animation: forecastDraw 1.1s cubic-bezier(.16,1,.3,1) forwards; }
+        .apd-forecast-modal.is-open .apd-rain-line { stroke-dasharray: 700; stroke-dashoffset: 700; animation: forecastDraw 1.25s .12s cubic-bezier(.16,1,.3,1) forwards; }
+        .apd-forecast-modal.is-open .apd-forecast-point { animation: forecastPoint .45s backwards; }
+        .apd-forecast-modal.is-open .apd-forecast-point:nth-child(2) { animation-delay:.08s; }.apd-forecast-modal.is-open .apd-forecast-point:nth-child(3) { animation-delay:.16s; }.apd-forecast-modal.is-open .apd-forecast-point:nth-child(4) { animation-delay:.24s; }.apd-forecast-modal.is-open .apd-forecast-point:nth-child(5) { animation-delay:.32s; }.apd-forecast-modal.is-open .apd-forecast-point:nth-child(6) { animation-delay:.4s; }.apd-forecast-modal.is-open .apd-forecast-point:nth-child(7) { animation-delay:.48s; }
+        @keyframes forecastDraw { to { stroke-dashoffset: 0; } }
+        @keyframes forecastPoint { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+        @media (max-width: 500px) { .apd-forecast-summary { grid-template-columns: 1fr; } .apd-forecast-legend { flex-wrap: wrap; } }
         .apd-greeting-weather { width: 320px; flex: 0 0 320px; }
         @media (max-width: 639px) {
           .apd-greeting-row { align-items: stretch; flex-direction: column; gap: 1rem; }
@@ -196,34 +219,15 @@ window.ApdaCitizenDashboard = {
 
       <div class="apd-dash">
 
-        <!-- Sticky Header -->
-        <header class="apd-header">
-          <div class="apd-header-inner justify-start">
-            <div class="flex items-center gap-3">
-              <div class="apd-loc">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                <span>${location}</span>
-              </div>
-
-              <div class="apd-user">
-                <div class="apd-user-info">
-                  <div class="apd-user-name">${firstName}</div>
-                  <div class="apd-user-role">Citizen</div>
-                </div>
-                <div class="apd-avatar" onclick="window.ApdaState.setCitizenTab('profile')" title="View Profile">
-                  ${avatar}
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <!-- Greeting & Date -->
+        <!-- Profile & Weather -->
         <div class="max-w-[1400px] mx-auto px-6">
           <div class="apd-greeting-row">
             <div class="apd-greeting">
-              <div class="apd-greeting-date">${currentDate}</div>
-              <h1 class="apd-greeting-text">${greeting}, <span>${firstName}</span>.</h1>
+              <div class="apd-profile-summary" onclick="window.ApdaState.setCitizenTab('profile')" title="View Profile">
+                <div class="apd-profile-avatar">${avatar}</div>
+                <div class="apd-profile-name">${user.name}</div>
+                <div class="apd-profile-address"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>${location}</div>
+              </div>
             </div>
             <div class="apd-greeting-weather">
               <div class="apd-side-card">
@@ -239,7 +243,7 @@ window.ApdaCitizenDashboard = {
                     </div>
                   </div>
                 </div>
-                <button type="button" class="apd-forecast-btn" onclick="document.getElementById('apd-forecast-modal').classList.add('is-open')">View Forecast</button>
+                <button type="button" class="apd-forecast-btn" onclick="window.ApdaCitizenDashboard.showForecast()">View Forecast</button>
               </div>
             </div>
           </div>
@@ -258,15 +262,21 @@ window.ApdaCitizenDashboard = {
               <span class="apd-forecast-key"><i style="background:#38bdf8"></i>Temperature (&deg;C)</span>
               <span class="apd-forecast-key"><i style="background:#818cf8"></i>Rain chance (%)</span>
             </div>
+            <div class="apd-forecast-summary">
+              <div class="apd-forecast-stat"><div class="apd-forecast-stat-label">Selected day</div><div id="apd-forecast-selected-day" class="apd-forecast-stat-value">Today</div></div>
+              <div class="apd-forecast-stat"><div class="apd-forecast-stat-label">Temperature</div><div id="apd-forecast-selected-temp" class="apd-forecast-stat-value">28&deg;C</div></div>
+              <div class="apd-forecast-stat"><div class="apd-forecast-stat-label">Rain chance</div><div id="apd-forecast-selected-rain" class="apd-forecast-stat-value">72%</div></div>
+            </div>
             <svg class="apd-forecast-chart" viewBox="0 0 620 280" role="img" aria-label="Seven-day temperature and rain chance forecast graph">
               <g stroke="rgba(148,163,184,0.16)" stroke-width="1"><line x1="54" y1="35" x2="590" y2="35"/><line x1="54" y1="82" x2="590" y2="82"/><line x1="54" y1="129" x2="590" y2="129"/><line x1="54" y1="176" x2="590" y2="176"/><line x1="54" y1="223" x2="590" y2="223"/></g>
               <g fill="#64748b" font-size="11" font-family="Inter, system-ui, sans-serif"><text x="16" y="39">32&deg;</text><text x="16" y="86">28&deg;</text><text x="16" y="133">24&deg;</text><text x="16" y="180">20&deg;</text><text x="55" y="249">Today</text><text x="141" y="249">Mon</text><text x="228" y="249">Tue</text><text x="315" y="249">Wed</text><text x="402" y="249">Thu</text><text x="489" y="249">Fri</text><text x="566" y="249">Sat</text></g>
               <path d="M60 111 L147 99 L234 123 L321 87 L408 99 L495 75 L582 87 L582 223 L60 223 Z" fill="rgba(56,189,248,0.10)"/>
-              <polyline points="60,111 147,99 234,123 321,87 408,99 495,75 582,87" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-              <polyline points="60,72 147,91 234,62 321,109 408,100 495,119 582,82" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round"/>
-              <g fill="#0f172a" stroke="#38bdf8" stroke-width="3"><circle cx="60" cy="111" r="4"/><circle cx="147" cy="99" r="4"/><circle cx="234" cy="123" r="4"/><circle cx="321" cy="87" r="4"/><circle cx="408" cy="99" r="4"/><circle cx="495" cy="75" r="4"/><circle cx="582" cy="87" r="4"/></g>
+              <polyline class="apd-temp-line" points="60,111 147,99 234,123 321,87 408,99 495,75 582,87" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline class="apd-rain-line" points="60,72 147,91 234,62 321,109 408,100 495,119 582,82" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round"/>
+              <g fill="#0f172a" stroke="#38bdf8" stroke-width="3"><circle class="apd-forecast-point" cx="60" cy="111" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Today','28','72','Heavy rain expected. Keep an umbrella handy and plan travel carefully.')"/><circle class="apd-forecast-point" cx="147" cy="99" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Monday','29','64','Cloudy intervals with showers possible in the afternoon.')"/><circle class="apd-forecast-point" cx="234" cy="123" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Tuesday','27','79','The wettest day this week; avoid low-lying routes where possible.')"/><circle class="apd-forecast-point" cx="321" cy="87" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Wednesday','30','55','Warmer and brighter, with brief evening showers.')"/><circle class="apd-forecast-point" cx="408" cy="99" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Thursday','29','58','Humid conditions with scattered showers.')"/><circle class="apd-forecast-point" cx="495" cy="75" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Friday','31','48','Warmest day of the week with lower rain probability.')"/><circle class="apd-forecast-point" cx="582" cy="87" r="4" onclick="window.ApdaCitizenDashboard.selectForecast('Saturday','30','68','Cloudy and rainy spells returning through the day.')"/></g>
               <g fill="#f8fafc" font-size="11" font-weight="700" font-family="Inter, system-ui, sans-serif"><text x="48" y="99">28&deg;</text><text x="135" y="87">29&deg;</text><text x="222" y="111">27&deg;</text><text x="309" y="75">30&deg;</text><text x="396" y="87">29&deg;</text><text x="483" y="63">31&deg;</text><text x="570" y="75">30&deg;</text></g>
             </svg>
+            <div id="apd-forecast-detail" class="apd-forecast-detail">Today: Heavy rain expected. Keep an umbrella handy and plan travel carefully.</div>
           </div>
         </div>
 
@@ -315,21 +325,6 @@ window.ApdaCitizenDashboard = {
 
           <!-- Left: Content Area -->
           <div class="min-w-0">
-            <!-- Horizontal Tab Navigation -->
-            <div class="apd-tabs">
-              ${navTabs.map(t => {
-      const isActive = activeTab === t.id;
-      const badge = t.id === 'alerts' && openAlerts ? `<span class="apd-tab-badge">${openAlerts}</span>` : '';
-      return `
-                  <button onclick="window.ApdaState.setCitizenTab('${t.id}')" class="apd-tab ${isActive ? 'active' : ''}">
-                    ${t.icon}
-                    <span>${t.label}</span>
-                    ${badge}
-                  </button>
-                `;
-    }).join('')}
-            </div>
-
             <!-- Content Panel -->
             <div class="apd-content" id="citizen-subtab-container">
               <div class="apd-content-header">
@@ -351,6 +346,24 @@ window.ApdaCitizenDashboard = {
           <!-- Right: Sidebar Widgets -->
           <div class="apd-side">
 
+            <!-- Feature Navigation Rail -->
+            <div class="apd-side-card">
+              <div class="apd-side-title">Features</div>
+              <nav class="apd-tabs" aria-label="Citizen dashboard features">
+                ${navTabs.map(t => {
+      const isActive = activeTab === t.id;
+      const badge = t.id === 'alerts' && openAlerts ? `<span class="apd-tab-badge">${openAlerts}</span>` : '';
+      return `
+                  <button onclick="window.ApdaState.setCitizenTab('${t.id}')" class="apd-tab ${isActive ? 'active' : ''}">
+                    ${t.icon}
+                    <span>${t.label}</span>
+                    ${badge}
+                  </button>
+                `;
+    }).join('')}
+              </nav>
+            </div>
+
             <!-- Weather Widget -->
             <div class="apd-side-card apd-weather-sidebar">
               <div class="apd-side-title">Weather</div>
@@ -362,41 +375,6 @@ window.ApdaCitizenDashboard = {
                   <div class="apd-weather-meta">
                     <span>💧 89% Humidity</span>
                     <span>💨 24 km/h</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Recent Activity -->
-            <div class="apd-side-card">
-              <div class="apd-side-title">Recent Activity</div>
-              <div class="apd-scroll max-h-[200px] overflow-y-auto">
-                <div class="apd-activity-item">
-                  <div class="apd-activity-dot" style="background: #dc2626;"></div>
-                  <div>
-                    <div class="apd-activity-text">Flood warning issued for Kamrup district</div>
-                    <div class="apd-activity-time">12 minutes ago</div>
-                  </div>
-                </div>
-                <div class="apd-activity-item">
-                  <div class="apd-activity-dot" style="background: #2563eb;"></div>
-                  <div>
-                    <div class="apd-activity-text">Relief camp opened at Dispur Stadium</div>
-                    <div class="apd-activity-time">45 minutes ago</div>
-                  </div>
-                </div>
-                <div class="apd-activity-item">
-                  <div class="apd-activity-dot" style="background: #059669;"></div>
-                  <div>
-                    <div class="apd-activity-text">Your request #4821 has been resolved</div>
-                    <div class="apd-activity-time">2 hours ago</div>
-                  </div>
-                </div>
-                <div class="apd-activity-item">
-                  <div class="apd-activity-dot" style="background: #d97706;"></div>
-                  <div>
-                    <div class="apd-activity-text">Road clearance team dispatched to Beltola</div>
-                    <div class="apd-activity-time">3 hours ago</div>
                   </div>
                 </div>
               </div>
