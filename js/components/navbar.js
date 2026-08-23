@@ -5,14 +5,13 @@ window.ApdaNavbar = {
     const t = (k) => window.ApdaI18n.t(k);
     const user = window.ApdaState.currentUser;
     const currentLang = window.ApdaI18n.currentLang;
-    const isSirenActive = window.ApdaSoundEngine && window.ApdaSoundEngine.isSirenPlaying;
 
     return `
       <nav class="glass-panel sticky top-0 z-40 border-b border-white/10 px-4 lg:px-8 py-3 transition-all duration-300">
         <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
           
           <!-- Logo & Brand -->
-          <div class="flex items-center gap-3 cursor-pointer" onclick="window.ApdaState.setView('home')">
+          <div class="flex items-center gap-3 cursor-pointer" onclick="window.ApdaState.setView(window.ApdaState.currentUser ? (window.ApdaState.currentUser.role === 'responder' ? 'responder' : 'citizen') : 'home')">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/25">
               <span class="text-2xl">🛡️</span>
             </div>
@@ -34,14 +33,6 @@ window.ApdaNavbar = {
           <!-- Utility Controls & Actions -->
           <div class="flex items-center gap-2 sm:gap-3">
             
-            <!-- Siren / Audio Alert Toggle -->
-            <button onclick="window.ApdaSoundEngine.isSirenPlaying ? window.ApdaSoundEngine.stopEmergencySiren() : window.ApdaSoundEngine.startEmergencySiren()" 
-                    title="Toggle Disaster Warning Siren"
-                    class="p-2 rounded-xl border transition-all text-xs font-bold flex items-center gap-1.5 ${isSirenActive ? 'bg-red-600 border-red-400 text-white animate-pulse shadow-lg shadow-red-600/50' : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-700'}">
-              <span>🚨</span>
-              <span class="hidden lg:inline">${isSirenActive ? 'Siren Active' : 'Siren'}</span>
-            </button>
-
             <!-- Emergency Helplines Quick Modal -->
             <button onclick="window.ApdaEmergencyCallModal.open()" 
                     class="px-2.5 sm:px-3 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-red-600/30 transition-all">

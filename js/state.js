@@ -101,6 +101,11 @@ window.ApdaState = {
   },
 
   setView(viewName) {
+    if (viewName === 'home' && this.currentUser) {
+      this.currentView = this.currentUser.role === 'responder' ? 'responder' : 'citizen';
+      this.emitChange();
+      return;
+    }
     if (viewName === 'citizen' && (!this.currentUser || this.currentUser.role !== 'citizen')) {
       window.ApdaAuthModal.open('citizen', 'login');
       return;
