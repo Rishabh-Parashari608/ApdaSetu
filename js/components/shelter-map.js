@@ -208,8 +208,6 @@ window.ApdaShelterMap = {
     }
 
     if (this.leafletMap && s.coordinates) {
-      this.leafletMap.flyTo(s.coordinates, 14, { duration: 1.2 });
-      
       if (this.routingLine) {
         this.leafletMap.removeLayer(this.routingLine);
       }

@@ -84,14 +84,7 @@ window.ApdaCommunityChat = {
                   </h3>
                 </div>
 
-                <!-- Tag Filter Pills in chat -->
-                <div class="flex items-center gap-1 overflow-x-auto text-[11px]">
-                  <span class="text-slate-500 mr-1">Filter:</span>
-                  <button onclick="window.ApdaCommunityChat.filterByTag('all')" class="px-2 py-0.5 rounded-lg ${this.filterTag === 'all' ? 'bg-slate-700 text-white font-bold' : 'text-slate-400'}">All</button>
-                  <button onclick="window.ApdaCommunityChat.filterByTag('Need Water/Food')" class="px-2 py-0.5 rounded-lg ${this.filterTag === 'Need Water/Food' ? 'bg-red-600 text-white font-bold' : 'text-slate-400'}">Water/Food</button>
-                  <button onclick="window.ApdaCommunityChat.filterByTag('Transport Available')" class="px-2 py-0.5 rounded-lg ${this.filterTag === 'Transport Available' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400'}">Transport</button>
-                  <button onclick="window.ApdaCommunityChat.filterByTag('Hazard Alert')" class="px-2 py-0.5 rounded-lg ${this.filterTag === 'Hazard Alert' ? 'bg-amber-600 text-white font-bold' : 'text-slate-400'}">Hazards</button>
-                </div>
+                <!-- Tag Filter Pills in chat (Removed) -->
               </div>
 
               <!-- Pinned Notice -->

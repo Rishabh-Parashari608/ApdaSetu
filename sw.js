@@ -1,5 +1,5 @@
 // Service Worker for ApdaSetu Offline Safety Guides and Critical Alerts
-const CACHE_NAME = 'apdasetu-v1.4.2';
+const CACHE_NAME = 'apdasetu-v1.4.3';
 const OFFLINE_URLS = [
   './',
   './index.html',
