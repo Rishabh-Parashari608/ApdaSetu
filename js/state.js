@@ -33,14 +33,9 @@ window.ApdaState = {
   },
 
   loadStateFromStorage() {
-    const savedUser = localStorage.getItem('apdasetu_user');
-    if (savedUser) {
-      try {
-        this.currentUser = JSON.parse(savedUser);
-      } catch (e) {
-        this.currentUser = null;
-      }
-    }
+    // Authentication is intentionally session-only: every fresh site visit starts signed out.
+    this.currentUser = null;
+    localStorage.removeItem('apdasetu_user');
 
     const savedRequests = localStorage.getItem('apdasetu_requests');
     if (savedRequests) {

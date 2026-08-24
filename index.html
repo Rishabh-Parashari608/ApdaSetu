@@ -16,32 +16,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
-          },
-          colors: {
-            emergency: {
-              red: '#dc2626',
-              amber: '#f59e0b',
-              emerald: '#10b981',
-              sky: '#0284c7'
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <!-- Local Tailwind build: avoids waiting on the external CDN during startup. -->
+  <link rel="stylesheet" href="css/tailwind.css?v=1.0.0">
 
   <!-- Leaflet Map CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" async></script>
 
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="css/styles.css?v=2.3.0">
@@ -87,6 +67,6 @@
 
   <!-- App Bootstrap -->
   <script src="js/app.js?v=1.9.0"></script>
-  <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
+  <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
 </body>
 </html>

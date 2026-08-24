@@ -292,7 +292,8 @@ window.ApdaCitizenDashboard = {
         .apd-contact-call:hover { background: rgba(5, 150, 105, 0.2); }
 
         /* SOS Button */
-        .apd-sos { position: fixed; bottom: 1.8rem; right: 1.8rem; z-index: 100; display: grid; place-items: center; width: 94px; height: 94px; }
+        /* Clear the bottom-right Emergency AI launcher. */
+        .apd-sos { position: fixed; bottom: 7.5rem; right: 1.8rem; z-index: 100; display: grid; place-items: center; width: 94px; height: 94px; }
         .apd-sos::before, .apd-sos::after { content: none; }
         .apd-sos::before { content: ''; position: absolute; inset: -31px; z-index: -2; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0 8%, rgba(255,197,57,.42) 12%, transparent 17% 31%, rgba(248,80,53,.52) 37%, transparent 43% 58%, rgba(255,197,57,.42) 65%, transparent 72% 86%, rgba(248,80,53,.46) 92%, transparent); filter: blur(4px); animation: sosRays 4s linear infinite; }
         .apd-sos::after { content: ''; position: absolute; inset: -20px; z-index: -1; border-radius: 50%; background: radial-gradient(circle, rgba(255,214,74,.32) 0%, rgba(249,80,53,.22) 39%, transparent 70%); filter: blur(8px); animation: sosGlow 1.9s ease-in-out infinite; }
