@@ -11,7 +11,8 @@ window.ApdaNavbar = {
         <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
           
           <!-- Logo & Brand -->
-          <div class="flex items-center gap-3 cursor-pointer" onclick="window.ApdaState.setView(window.ApdaState.currentUser ? (window.ApdaState.currentUser.role === 'responder' ? 'responder' : 'citizen') : 'home')">
+          <!-- [volunteer done] Route the brand safely to all three role dashboards -->
+          <div class="flex items-center gap-3 cursor-pointer" onclick="window.ApdaState.setView(window.ApdaState.currentUser ? (window.ApdaState.currentUser.role === 'responder' ? 'responder' : window.ApdaState.currentUser.role === 'volunteer' ? 'volunteer' : 'citizen') : 'home')">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/25">
               <span class="text-2xl">🛡️</span>
             </div>
@@ -50,8 +51,8 @@ window.ApdaNavbar = {
             <!-- Auth / User Indicator -->
             ${user ? `
               <div class="flex items-center gap-2 pl-1 sm:pl-2 border-l border-white/10">
-                <button onclick="window.ApdaState.setView(user.role === 'responder' ? 'responder' : 'citizen')" class="flex items-center gap-2 text-left hover:opacity-80">
-                  <div class="w-8 h-8 rounded-full ${user.role === 'responder' ? 'bg-amber-600' : 'bg-red-600'} flex items-center justify-center font-bold text-white text-xs">
+                <button onclick="window.ApdaState.setView(user.role === 'responder' ? 'responder' : user.role === 'volunteer' ? 'volunteer' : 'citizen')" class="flex items-center gap-2 text-left hover:opacity-80">
+                  <div class="w-8 h-8 rounded-full ${user.role === 'responder' ? 'bg-amber-600' : user.role === 'volunteer' ? 'bg-emerald-600' : 'bg-red-600'} flex items-center justify-center font-bold text-white text-xs">
                     ${user.name ? user.name.charAt(0) : 'U'}
                   </div>
                   <div class="hidden xl:block text-xs">

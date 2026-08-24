@@ -6,6 +6,7 @@ window.ApdaState = {
   currentView: 'home', // 'home' | 'citizen' | 'responder'
   citizenTab: 'alerts', // 'sos' | 'alerts' | 'shelters' | 'requests' | 'family' | 'chat' | 'guides' | 'updates' | 'profile'
   responderTab: 'queue', // 'queue' | 'map' | 'dispatch' | 'analytics'
+  volunteerTab: 'alerts', // [volunteer done] 'alerts' | 'history'
 
   // Data collections
   alerts: [],
@@ -15,6 +16,10 @@ window.ApdaState = {
   chatRooms: [],
   familyMembers: [],
   communityUpdates: [],
+  volunteers: [], // [volunteer done] Verified volunteer directory
+  volunteerMobilizations: [], // [volunteer done] Active and historical volunteer requests
+  volunteerSyncChannel: null, // [volunteer done] Cross-tab response-network channel
+  volunteerTimer: null, // [volunteer done] Response-window safety monitor
   checkedKitItems: new Set(),
   activeChatRoomId: 'ROOM-ASSAM-FLOOD',
 
@@ -23,6 +28,7 @@ window.ApdaState = {
 
   init() {
     this.loadStateFromStorage();
+    this.initVolunteerNetwork(); // [volunteer done] Start immediate multi-tab volunteer updates
     this.startLiveSimulation();
   },
 
@@ -53,6 +59,19 @@ window.ApdaState = {
     this.chatRooms = [...window.ApdaSeedData.chatRooms];
     this.familyMembers = [...window.ApdaSeedData.familyMembers];
     this.communityUpdates = [...window.ApdaSeedData.communityUpdates];
+    // [volunteer done] Preserve response progress independently of regular incident seed data.
+    const savedVolunteerNetwork = localStorage.getItem('apdasetu_volunteer_network');
+    if (savedVolunteerNetwork) {
+      try {
+        const network = JSON.parse(savedVolunteerNetwork);
+        this.volunteers = network.volunteers || [...window.ApdaSeedData.volunteers];
+        this.volunteerMobilizations = network.mobilizations || [];
+      } catch (e) {
+        this.volunteers = [...window.ApdaSeedData.volunteers];
+      }
+    } else {
+      this.volunteers = [...window.ApdaSeedData.volunteers];
+    }
 
     const savedKit = localStorage.getItem('apdasetu_kit_checked');
     if (savedKit) {
@@ -64,6 +83,170 @@ window.ApdaState = {
 
   saveRequests() {
     localStorage.setItem('apdasetu_requests', JSON.stringify(this.requests));
+  },
+
+  // [volunteer done] BroadcastChannel with storage-event fallback for instant demo synchronization.
+  initVolunteerNetwork() {
+    if (typeof BroadcastChannel !== 'undefined') {
+      this.volunteerSyncChannel = new BroadcastChannel('apda_sync');
+      this.volunteerSyncChannel.onmessage = (event) => this.receiveVolunteerNetwork(event.data);
+    }
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'apdasetu_volunteer_network' && event.newValue) {
+        try { this.receiveVolunteerNetwork(JSON.parse(event.newValue), true); } catch (e) {}
+      }
+    });
+    this.volunteerTimer = setInterval(() => this.checkVolunteerTimeouts(), 1000);
+  },
+
+  // [volunteer done] Persist a compact network snapshot and notify every open application tab.
+  syncVolunteerNetwork() {
+    const payload = { type: 'volunteer-network', updatedAt: Date.now(), volunteers: this.volunteers, mobilizations: this.volunteerMobilizations };
+    localStorage.setItem('apdasetu_volunteer_network', JSON.stringify(payload));
+    if (this.volunteerSyncChannel) this.volunteerSyncChannel.postMessage(payload);
+  },
+
+  // [volunteer done] Accept only the shared volunteer domain; each tab retains its own logged-in persona.
+  receiveVolunteerNetwork(payload, fromStorage = false) {
+    if (!payload || payload.type !== 'volunteer-network') return;
+    this.volunteers = payload.volunteers || this.volunteers;
+    this.volunteerMobilizations = payload.mobilizations || this.volunteerMobilizations;
+    this.emitChange();
+  },
+
+  // [volunteer done] Geographic matching uses Haversine distance and safely rejects incomplete locations.
+  calculateDistanceKm(from, to) {
+    if (!Array.isArray(from) || !Array.isArray(to) || from.length < 2 || to.length < 2) return null;
+    const radians = (value) => value * Math.PI / 180;
+    const earthRadiusKm = 6371;
+    const dLat = radians(to[0] - from[0]);
+    const dLng = radians(to[1] - from[1]);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(radians(from[0])) * Math.cos(radians(to[0])) * Math.sin(dLng / 2) ** 2;
+    return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  },
+
+  // [volunteer done] Severity-specific volunteer radius and decision window.
+  getVolunteerRules(severity) {
+    return ({ critical: { radiusKm: 5, windowMinutes: 5 }, high: { radiusKm: 6, windowMinutes: 7 }, medium: { radiusKm: 10, windowMinutes: 10 } })[String(severity).toLowerCase()] || { radiusKm: 10, windowMinutes: 10 };
+  },
+
+  // [volunteer done] ETA is deliberately labelled as an estimate, based on local response travel assumptions.
+  estimateVolunteerEta(distanceKm) {
+    return Math.max(3, Math.ceil((distanceKm || 0) / 0.47));
+  },
+
+  // [volunteer done] Commander creates one targeted request per incident; only verified, available volunteers qualify.
+  mobilizeNearbyVolunteers(requestId, options = {}) {
+    const request = this.requests.find(r => r.id === requestId);
+    if (!request || !request.coordinates) {
+      this.notify('Volunteer mobilization needs a valid incident location.', 'warning');
+      return;
+    }
+    const existing = this.volunteerMobilizations.find(m => m.requestId === requestId && !['completed', 'escalated'].includes(m.status));
+    if (existing) {
+      this.notify(`Volunteer mobilization is already active for ${requestId}.`, 'info');
+      return;
+    }
+    const rules = this.getVolunteerRules(request.severity);
+    const targets = this.volunteers.filter(v => v.verified && v.availability === 'available').map(v => {
+      const distanceKm = this.calculateDistanceKm(v.coordinates, request.coordinates);
+      return distanceKm !== null && distanceKm <= rules.radiusKm ? { volunteerId: v.id, distanceKm: Number(distanceKm.toFixed(1)), etaMinutes: this.estimateVolunteerEta(distanceKm), status: 'notified' } : null;
+    }).filter(Boolean);
+    const now = Date.now();
+    const mobilization = { id: `MOB-${now}`, requestId, severity: request.severity, incidentAddress: request.address, incidentCoordinates: request.coordinates, disasterType: request.disasterType, createdAt: now, expiresAt: now + rules.windowMinutes * 60000, rules, targets, status: 'notified', escalated: false, groundConfirmedBy: null, isScramble: Boolean(options.scramble) }; // [volunteer done] Flag drives the emergency scramble presentation and siren.
+    this.volunteerMobilizations.unshift(mobilization);
+    request.timeline.unshift({ time: 'Just now', status: 'Volunteer Mobilization', note: `${targets.length} verified nearby volunteer(s) notified within ${rules.radiusKm} km.` });
+    this.saveRequests();
+    this.syncVolunteerNetwork();
+    this.notify(`${targets.length} eligible verified volunteer(s) ${options.scramble ? 'SCRAMBLED' : 'mobilized'} for ${requestId}.`, targets.length ? 'success' : 'warning'); // [volunteer done] Distinguish the emergency action in command feedback.
+    this.emitChange();
+  },
+
+  // [volunteer done] Scramble reuses the matching, sync, countdown, and escalation pipeline.
+  scrambleNearbyVolunteers(requestId) {
+    this.mobilizeNearbyVolunteers(requestId, { scramble: true });
+  },
+
+  // [volunteer done] Volunteer availability controls whether the person can receive future alerts.
+  setVolunteerAvailability(volunteerId, availability) {
+    const volunteer = this.volunteers.find(v => v.id === volunteerId);
+    if (!volunteer) return;
+    volunteer.availability = availability;
+    this.syncVolunteerNetwork();
+    this.notify(`Volunteer status set to ${availability === 'available' ? 'AVAILABLE' : 'OFFLINE'}.`, 'info');
+    this.emitChange();
+  },
+
+  // [volunteer done] Status workflow is shared with commanders immediately, including verified ground confirmation.
+  updateVolunteerTask(mobilizationId, volunteerId, status) {
+    const mobilization = this.volunteerMobilizations.find(m => m.id === mobilizationId);
+    const target = mobilization && mobilization.targets.find(t => t.volunteerId === volunteerId);
+    const volunteer = this.volunteers.find(v => v.id === volunteerId);
+    if (!mobilization || !target || !volunteer) return;
+    // [volunteer done] The local recipient's siren ends on accept or decline without changing other volunteers' alerts.
+    if (mobilization.isScramble && ['accepted', 'declined'].includes(status) && this.currentUser?.id === volunteerId && window.ApdaSoundEngine) window.ApdaSoundEngine.stopEmergencySiren();
+    target.status = status;
+    target.updatedAt = Date.now();
+    if (status === 'accepted') target.acceptedAt = target.updatedAt;
+    if (status === 'on_site') {
+      mobilization.groundConfirmedBy = { id: volunteer.id, name: volunteer.name, verified: true, at: target.updatedAt };
+      mobilization.status = 'ground_confirmed';
+    }
+    if (status === 'completed') {
+      volunteer.completedTasks += 1;
+      volunteer.peopleAssisted += 1;
+      volunteer.responseHistory.unshift(`Completed ${mobilization.severity} assistance · ${mobilization.incidentAddress}`);
+      mobilization.status = mobilization.targets.some(t => !['completed', 'declined'].includes(t.status)) ? mobilization.status : 'completed';
+    }
+    const request = this.requests.find(r => r.id === mobilization.requestId);
+    if (request && status === 'on_site') request.timeline.unshift({ time: 'Just now', status: 'Ground Confirmed', note: `Verified volunteer ${volunteer.name} confirmed arrival on site.` });
+    this.saveRequests();
+    this.syncVolunteerNetwork();
+    this.notify(status === 'on_site' ? `GROUND CONFIRMED by verified volunteer ${volunteer.name}.` : `${volunteer.name}: ${status.replace('_', ' ').toUpperCase()}`, status === 'on_site' ? 'success' : 'info');
+    this.emitChange();
+  },
+
+  // [volunteer done] A non-guaranteed ETA breach informs command without labelling the volunteer a failure.
+  checkVolunteerEta(mobilization, target) {
+    if (!target.acceptedAt || !['accepted', 'on_the_way'].includes(target.status) || target.etaExceeded) return;
+    if (Date.now() > target.acceptedAt + target.etaMinutes * 60000) {
+      target.etaExceeded = true;
+      this.syncVolunteerNetwork();
+      this.notify(`ETA EXCEEDED: ${this.volunteers.find(v => v.id === target.volunteerId)?.name || 'Volunteer'} has not arrived yet.`, 'warning');
+    }
+  },
+
+  // [volunteer done] Timeout escalates exactly once through the existing dispatchTeam path.
+  checkVolunteerTimeouts() {
+    this.volunteerMobilizations.forEach(mobilization => {
+      mobilization.targets.forEach(target => this.checkVolunteerEta(mobilization, target));
+      if (Date.now() >= mobilization.expiresAt && !mobilization.groundConfirmedBy && !mobilization.escalated) this.autoEscalateVolunteerMobilization(mobilization.id);
+    });
+    // [volunteer done] Refresh active volunteer cards so the urgency countdown visibly advances.
+    if (this.volunteerMobilizations.some(m => !m.escalated && !m.groundConfirmedBy && Date.now() < m.expiresAt)) this.emitChange();
+  },
+
+  // [volunteer done] localStorage lock suppresses duplicate automatic dispatch across racing browser tabs.
+  autoEscalateVolunteerMobilization(mobilizationId) {
+    const mobilization = this.volunteerMobilizations.find(m => m.id === mobilizationId);
+    if (!mobilization || mobilization.escalated || mobilization.groundConfirmedBy) return;
+    const lockKey = `apdasetu_volunteer_escalation_${mobilizationId}`;
+    if (localStorage.getItem(lockKey)) return;
+    localStorage.setItem(lockKey, String(Date.now()));
+    mobilization.escalated = true;
+    mobilization.status = 'escalated';
+    // [volunteer done] Stop the recipient's repeating siren when its scramble window expires.
+    if (mobilization.isScramble && this.currentUser && mobilization.targets.some(target => target.volunteerId === this.currentUser.id)) window.ApdaSoundEngine?.stopEmergencySiren();
+    const request = this.requests.find(r => r.id === mobilization.requestId);
+    if (request) {
+      request.timeline.unshift({ time: 'Just now', status: 'Volunteer Response Timeout', note: 'Professional response automatically escalated after the volunteer response window.' });
+      const availableUnit = this.rescueUnits.find(unit => unit.status === 'Available');
+      if (availableUnit && request.status !== 'Dispatched') this.dispatchTeam(request.id, availableUnit.id, 'AUTO-ESCALATE: volunteer response window expired.');
+      else this.saveRequests();
+    }
+    this.syncVolunteerNetwork();
+    this.notify('VOLUNTEER RESPONSE TIMEOUT — Professional response automatically escalated.', 'warning');
+    this.emitChange();
   },
 
   subscribe(fn) {
@@ -85,10 +268,13 @@ window.ApdaState = {
     localStorage.setItem('apdasetu_user', JSON.stringify(userObj));
     if (userObj.role === 'responder') {
       this.currentView = 'responder';
+    } else if (userObj.role === 'volunteer') { // [volunteer done] Dedicated volunteer destination
+      this.currentView = 'volunteer';
     } else {
       this.currentView = 'citizen';
     }
-    this.notify(`Logged in as ${userObj.name} (${userObj.role === 'responder' ? 'Responder/Command' : 'Citizen'})`, 'success');
+    // [volunteer done] Keep the role label accurate for the volunteer demo account.
+    this.notify(`Logged in as ${userObj.name} (${userObj.role === 'responder' ? 'Responder/Command' : userObj.role === 'volunteer' ? 'Verified Volunteer' : 'Citizen'})`, 'success');
     this.emitChange();
   },
 
@@ -102,7 +288,7 @@ window.ApdaState = {
 
   setView(viewName) {
     if (viewName === 'home' && this.currentUser) {
-      this.currentView = this.currentUser.role === 'responder' ? 'responder' : 'citizen';
+      this.currentView = this.currentUser.role === 'responder' ? 'responder' : this.currentUser.role === 'volunteer' ? 'volunteer' : 'citizen'; // [volunteer done] Restore the correct dashboard
       this.emitChange();
       return;
     }
@@ -112,6 +298,11 @@ window.ApdaState = {
     }
     if (viewName === 'responder' && (!this.currentUser || this.currentUser.role !== 'responder')) {
       window.ApdaAuthModal.open('responder', 'login');
+      return;
+    }
+    // [volunteer done] Guard the volunteer dashboard with its dedicated role.
+    if (viewName === 'volunteer' && (!this.currentUser || this.currentUser.role !== 'volunteer')) {
+      window.ApdaAuthModal.open('volunteer', 'login');
       return;
     }
     this.currentView = viewName;
@@ -126,6 +317,12 @@ window.ApdaState = {
 
   setResponderTab(tabName) {
     this.responderTab = tabName;
+    this.emitChange();
+  },
+
+  // [volunteer done] Volunteer dashboard navigation state.
+  setVolunteerTab(tabName) {
+    this.volunteerTab = tabName;
     this.emitChange();
   },
 

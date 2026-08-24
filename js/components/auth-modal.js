@@ -1,8 +1,9 @@
 // Auth & Role Selection Modal with 1-Click Quick Demo Presets
 
 window.ApdaAuthModal = {
-  activeTab: 'demo', // 'demo' | 'citizen' | 'responder'
+  activeTab: 'demo', // [volunteer done] 'demo' | 'citizen' | 'responder' | 'volunteer'
   authMode: 'login', // 'login' | 'signup'
+  selectedDemoVolunteerId: 'VLT-001', // [volunteer done] Presenter-selected identity for the volunteer response demo.
 
   open(defaultTab = 'demo', authMode = 'login') {
     this.activeTab = defaultTab;
@@ -65,6 +66,10 @@ window.ApdaAuthModal = {
           <button onclick="window.ApdaAuthModal.switchTab('responder')" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all ${this.activeTab === 'responder' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">
             🚒 Responder
           </button>
+          <!-- [volunteer done] Third authentication role -->
+          <button onclick="window.ApdaAuthModal.switchTab('volunteer')" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all ${this.activeTab === 'volunteer' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">
+            🦺 Volunteer
+          </button>
         </div>
 
         <!-- Tab Body -->
@@ -72,6 +77,7 @@ window.ApdaAuthModal = {
           ${this.activeTab === 'demo' ? this.renderDemoTab() : ''}
           ${this.activeTab === 'citizen' ? this.renderCitizenTab() : ''}
           ${this.activeTab === 'responder' ? this.renderResponderTab() : ''}
+          ${this.activeTab === 'volunteer' ? this.renderVolunteerTab() : ''}
         </div>
       </div>
     `;
@@ -100,6 +106,9 @@ window.ApdaAuthModal = {
           </div>
           <span class="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-600 text-white group-hover:bg-red-500">Login →</span>
         </button>
+
+        <!-- [volunteer done] All verified demo identities are visible before entering the volunteer dashboard. -->
+        ${this.renderVolunteerDemoSelector()}
 
         <!-- NDRF Commander Preset -->
         <button onclick="window.ApdaAuthModal.loginDemo('ndrf')" class="w-full p-4 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-amber-500/40 hover:border-amber-500 transition-all flex items-center justify-between text-left group">
@@ -189,6 +198,28 @@ window.ApdaAuthModal = {
     `;
   },
 
+  // [volunteer done] Clear selector shows seeded skills, verification, availability, and proximity to the live demo incident.
+  renderVolunteerDemoSelector(compact = false) {
+    const volunteers = (window.ApdaState.volunteers || []).filter(volunteer => volunteer.verified);
+    const activeMobilization = (window.ApdaState.volunteerMobilizations || []).find(mobilization => !mobilization.escalated && !mobilization.groundConfirmedBy);
+    const incident = activeMobilization ? window.ApdaState.requests.find(request => request.id === activeMobilization.requestId) : window.ApdaState.requests.find(request => request.id === 'REQ-2026-001') || window.ApdaState.requests[0];
+    const selectedId = volunteers.some(volunteer => volunteer.id === this.selectedDemoVolunteerId) ? this.selectedDemoVolunteerId : volunteers[0]?.id;
+    this.selectedDemoVolunteerId = selectedId;
+    return `<section class="rounded-2xl p-3 bg-emerald-950/20 border border-emerald-500/35 ${compact ? '' : 'my-1'}"><div class="flex items-center justify-between gap-3 mb-2"><div><h4 class="text-xs font-black text-emerald-200">🦺 VOLUNTEER DEMO SELECTOR</h4><p class="text-[10px] text-slate-400">Choose the verified identity for this dashboard session${incident ? ` · Distance to ${incident.id}` : ''}</p></div><span class="text-[10px] text-emerald-300 font-bold">${volunteers.length} VERIFIED</span></div><div class="max-h-52 overflow-y-auto pr-1 space-y-2">${volunteers.map(volunteer => { const distance = incident ? window.ApdaState.calculateDistanceKm(volunteer.coordinates, incident.coordinates) : null; const isSelected = volunteer.id === selectedId; return `<button type="button" onclick="window.ApdaAuthModal.selectDemoVolunteer('${volunteer.id}')" class="w-full p-3 rounded-xl border text-left transition-all ${isSelected ? 'bg-emerald-600/20 border-emerald-400 shadow-md shadow-emerald-950/40' : 'bg-slate-900/70 border-slate-700 hover:border-emerald-500/60'}"><div class="flex items-start justify-between gap-2"><div><div class="flex items-center gap-1.5"><span class="font-bold text-sm text-white">${volunteer.name}</span><span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-black">✓ VERIFIED</span></div><p class="text-[10px] text-slate-400 mt-1">${volunteer.skills.join(' · ')}</p></div><div class="text-right shrink-0"><span class="block text-[10px] font-black ${volunteer.availability === 'available' ? 'text-emerald-300' : 'text-slate-400'}">${volunteer.availability === 'available' ? '● AVAILABLE' : '● OFFLINE'}</span>${distance !== null ? `<span class="block text-[10px] text-cyan-300 mt-1">📍 ${distance.toFixed(1)} km away</span>` : '<span class="block text-[10px] text-slate-500 mt-1">Location unavailable</span>'}</div></div></button>`; }).join('')}</div><button type="button" onclick="window.ApdaAuthModal.loginDemo('volunteer')" class="w-full mt-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black">Open Volunteer Dashboard as ${volunteers.find(volunteer => volunteer.id === selectedId)?.name || 'selected volunteer'} →</button></section>`;
+  },
+
+  // [volunteer done] Keep selection in the modal only; response-network availability is never changed here.
+  selectDemoVolunteer(volunteerId) {
+    this.selectedDemoVolunteerId = volunteerId;
+    const modal = document.getElementById('auth-modal-backdrop');
+    if (modal) modal.innerHTML = this.renderContent();
+  },
+
+  // [volunteer done] The role-specific login also uses the same seeded identity selector.
+  renderVolunteerTab() {
+    return `<div class="space-y-3.5">${this.renderVolunteerDemoSelector(true)}<p class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-200">✓ Demo profiles are verified. Only volunteers marked available receive new emergency requests.</p></div>`;
+  },
+
   loginDemo(preset) {
     let user;
     if (preset === 'citizen') {
@@ -212,6 +243,9 @@ window.ApdaAuthModal = {
         badge: 'NDRF-8842',
         agencyType: 'NDRF'
       };
+    } else if (preset === 'volunteer') { // [volunteer done] Use the identity selected by the presenter.
+      const volunteer = window.ApdaState.volunteers.find(v => v.id === this.selectedDemoVolunteerId) || window.ApdaState.volunteers.find(v => v.verified);
+      user = { ...volunteer, role: 'volunteer', city: 'Hatigaon, Guwahati' };
     } else {
       user = {
         id: 'RESP-MED-01',
@@ -238,6 +272,9 @@ window.ApdaAuthModal = {
         phone: document.getElementById('citizen-phone').value || '+91 98765 00000',
         city: document.getElementById('citizen-city').value || 'Disaster Zone'
       };
+    } else if (role === 'volunteer') { // [volunteer done] Kept for compatibility with any existing volunteer login calls.
+      const volunteer = window.ApdaState.volunteers.find(v => v.id === this.selectedDemoVolunteerId) || window.ApdaState.volunteers.find(v => v.verified);
+      user = { ...volunteer, role: 'volunteer' };
     } else {
       user = {
         id: 'RESP-' + Math.floor(Math.random() * 10000),

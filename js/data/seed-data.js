@@ -414,6 +414,15 @@ window.ApdaSeedData = {
     }
   ],
 
+  // [volunteer done] Verified volunteer profiles used by the response-network demo.
+  volunteers: [
+    { id: 'VLT-001', name: 'Rupam Saikia', phone: '+91 98640 22331', verified: true, availability: 'available', skills: ['Boat handling', 'Elderly evacuation', 'First aid'], coordinates: [26.1462, 91.7428], completedTasks: 18, peopleAssisted: 74, hoursServed: 126, responseHistory: ['Flood evacuation · Hatigaon', 'Medicine delivery · Beltola'] },
+    { id: 'VLT-002', name: 'Dr. Nilakshi Das', phone: '+91 98640 22332', verified: true, availability: 'available', skills: ['First aid', 'Triage', 'Child care'], coordinates: [26.1515, 91.7505], completedTasks: 31, peopleAssisted: 119, hoursServed: 208, responseHistory: ['First-aid camp · Guwahati', 'Flood shelter triage'] },
+    { id: 'VLT-003', name: 'Aarav Mishra', phone: '+91 94370 88144', verified: true, availability: 'available', skills: ['Water rescue', 'Radio coordination'], coordinates: [19.8152, 85.8354], completedTasks: 14, peopleAssisted: 52, hoursServed: 97, responseHistory: ['Coastal evacuation · Puri', 'Cyclone supply run'] },
+    { id: 'VLT-004', name: 'Meera Bora', phone: '+91 98640 22335', verified: true, availability: 'offline', skills: ['Logistics', 'Food distribution'], coordinates: [26.1370, 91.7330], completedTasks: 22, peopleAssisted: 91, hoursServed: 164, responseHistory: ['Relief-kit distribution', 'Shelter coordination'] },
+    { id: 'VLT-005', name: 'Kunal Rawat', phone: '+91 97561 77221', verified: true, availability: 'available', skills: ['Rope rescue', 'Terrain navigation'], coordinates: [30.2894, 78.9781], completedTasks: 26, peopleAssisted: 83, hoursServed: 187, responseHistory: ['Landslide evacuation', 'Mountain search support'] }
+  ],
+
   // Community Help Chat Rooms & Seed Messages
   chatRooms: [
     {
