@@ -2,6 +2,7 @@
 
 window.ApdaNavbar = {
   isMenuOpen: false,
+  closeTimer: null,
 
   toggleMenu() {
     this.isMenuOpen = !this.isMenuOpen;
@@ -9,8 +10,22 @@ window.ApdaNavbar = {
   },
 
   openMenu() {
+    this.cancelMenuClose();
     this.isMenuOpen = true;
     this.updateMenuVisibility();
+  },
+
+  scheduleMenuClose() {
+    this.cancelMenuClose();
+    // Keep the menu available while the pointer moves from the trigger to it.
+    this.closeTimer = window.setTimeout(() => this.closeMenu(), 220);
+  },
+
+  cancelMenuClose() {
+    if (this.closeTimer) {
+      window.clearTimeout(this.closeTimer);
+      this.closeTimer = null;
+    }
   },
 
   updateMenuVisibility() {
@@ -21,6 +36,7 @@ window.ApdaNavbar = {
   },
 
   closeMenu() {
+    this.cancelMenuClose();
     this.isMenuOpen = false;
     const menu = document.getElementById('navbar-overflow-menu');
     const button = document.getElementById('navbar-overflow-toggle');
@@ -42,7 +58,7 @@ window.ApdaNavbar = {
           <div class="flex items-center gap-3 cursor-pointer" onclick="window.ApdaState.setView(window.ApdaState.currentUser ? (window.ApdaState.currentUser.role === 'responder' ? 'responder' : window.ApdaState.currentUser.role === 'volunteer' ? 'volunteer' : 'citizen') : 'home')">
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-cyan-100 to-cyan-300 bg-clip-text text-transparent">
+                <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-amber-100 to-amber-300 bg-clip-text text-transparent">
                   ${t('appName')}
                 </span>
               </div>
@@ -96,12 +112,12 @@ window.ApdaNavbar = {
               </button>
             `}
 
-            <div class="relative" onmouseleave="window.ApdaNavbar.closeMenu()">
+            <div class="relative" onmouseenter="window.ApdaNavbar.cancelMenuClose()" onmouseleave="window.ApdaNavbar.scheduleMenuClose()">
             <button id="navbar-overflow-toggle" onclick="window.ApdaNavbar.openMenu()" onmouseenter="window.ApdaNavbar.openMenu()" onfocus="window.ApdaNavbar.openMenu()"
-                    class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black leading-none shadow-lg shadow-cyan-500/25 hover:brightness-110 transition-all"
+                    class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-white text-2xl font-black leading-none shadow-lg shadow-amber-500/25 hover:brightness-110 transition-all"
                     title="More options" aria-label="More options" aria-expanded="${this.isMenuOpen}">&#8942;</button>
 
-              <div id="navbar-overflow-menu" class="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 p-2 shadow-2xl shadow-black/50 ${this.isMenuOpen ? '' : 'hidden'}">
+              <div id="navbar-overflow-menu" onmouseenter="window.ApdaNavbar.openMenu()" class="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 p-2 shadow-2xl shadow-black/50 ${this.isMenuOpen ? '' : 'hidden'}">
                 ${user ? `
                   <button onclick="window.ApdaState.setView('${user.role === 'responder' ? 'responder' : user.role === 'volunteer' ? 'volunteer' : 'citizen'}'); window.ApdaNavbar.closeMenu()" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs text-slate-200 hover:bg-slate-800">
                     <span class="grid h-7 w-7 place-items-center rounded-full ${user.role === 'responder' ? 'bg-amber-600' : user.role === 'volunteer' ? 'bg-emerald-600' : 'bg-red-600'} font-bold text-white">${user.name ? user.name.charAt(0) : 'U'}</span>

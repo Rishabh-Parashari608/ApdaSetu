@@ -132,7 +132,7 @@ window.ApdaCitizenDashboard = {
     const tempChart = document.getElementById('apd-temp-chart');
     if (tempChart) {
       const grid = [30, 72, 114, 156, 198].map(y => `<line x1="54" y1="${y}" x2="600" y2="${y}"/>`).join('');
-      const bars = days.map((item, index) => `<rect x="${x[index] - 18}" y="${198 - item.rain * 1.3}" width="36" height="${item.rain * 1.3}" rx="4" fill="#93c5fd"/>`).join('');
+      const bars = days.map((item, index) => `<rect x="${x[index] - 18}" y="${198 - item.rain * 1.3}" width="36" height="${item.rain * 1.3}" rx="4" fill="#fbbf24"/>`).join('');
       const points = tempY.map((y, index) => `${x[index]},${y}`).join(' ');
       const labelsSvg = days.map((item, index) => `<text x="${x[index] - 11}" y="${tempY[index] - 10}">${item.temperature}°</text>`).join('');
       const daysSvg = labels.map((label, index) => `<text x="${x[index]}" y="220">${label}</text>`).join('');
@@ -190,7 +190,7 @@ window.ApdaCitizenDashboard = {
     const activityHtml = `
       <div class="space-y-2">
         <div class="apd-activity-item"><div class="apd-activity-dot" style="background:#ef4444"></div><div><div class="apd-activity-text">Flood warning issued for Kamrup district</div><div class="apd-activity-time">12 minutes ago</div></div></div>
-        <div class="apd-activity-item"><div class="apd-activity-dot" style="background:#3b82f6"></div><div><div class="apd-activity-text">Relief camp opened at Dispur Stadium</div><div class="apd-activity-time">45 minutes ago</div></div></div>
+        <div class="apd-activity-item"><div class="apd-activity-dot" style="background:#f59e0b"></div><div><div class="apd-activity-text">Relief camp opened at Dispur Stadium</div><div class="apd-activity-time">45 minutes ago</div></div></div>
         <div class="apd-activity-item"><div class="apd-activity-dot" style="background:#10b981"></div><div><div class="apd-activity-text">Your request #4821 has been resolved</div><div class="apd-activity-time">2 hours ago</div></div></div>
         <div class="apd-activity-item"><div class="apd-activity-dot" style="background:#f59e0b"></div><div><div class="apd-activity-text">Road clearance team dispatched to Beltola</div><div class="apd-activity-time">3 hours ago</div></div></div>
       </div>`;
@@ -211,7 +211,7 @@ window.ApdaCitizenDashboard = {
     return `
       <style>
         /* ═══ Professional Emergency Dashboard Styles ═══ */
-        .apd-dash { font-family: 'Inter', system-ui, sans-serif; background: #0c1220; color: #f1f5f9; min-height: 100vh; }
+        .apd-dash { font-family: 'Inter', system-ui, sans-serif; background: #18130d; color: #f1f5f9; min-height: 100vh; }
 
         /* Emergency Banner */
         .apd-banner { background: linear-gradient(90deg, rgba(185, 28, 28, 0.12), rgba(153, 27, 27, 0.06)); border-bottom: 1px solid rgba(185, 28, 28, 0.15); }
@@ -234,8 +234,8 @@ window.ApdaCitizenDashboard = {
         .apd-stat-label { font-size: 0.6875rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
         .apd-stat-red { color: #f87171; }
         .apd-stat-red .apd-stat-icon { background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.15); color: #f87171; }
-        .apd-stat-blue { color: #60a5fa; }
-        .apd-stat-blue .apd-stat-icon { background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.15); color: #60a5fa; }
+        .apd-stat-blue { color: #fde047; }
+        .apd-stat-blue .apd-stat-icon { background: rgba(250, 204, 21, 0.14); border: 1px solid rgba(250, 204, 21, 0.3); color: #fde047; }
         .apd-stat-green { color: #34d399; }
         .apd-stat-green .apd-stat-icon { background: rgba(5, 150, 105, 0.1); border: 1px solid rgba(5, 150, 105, 0.15); color: #34d399; }
         .apd-stat-amber { color: #fbbf24; }
@@ -251,7 +251,7 @@ window.ApdaCitizenDashboard = {
         .apd-tab { display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1rem; border-radius: 10px; font-size: 0.8125rem; font-weight: 600; color: #64748b; white-space: nowrap; transition: all 0.2s; border: none; background: transparent; cursor: pointer; position: relative; }
         .apd-tab:hover { color: #94a3b8; background: rgba(255,255,255,0.03); }
         .apd-tab.active { color: #f8fafc; background: rgba(30, 41, 59, 0.8); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-        .apd-tab.active::after { content: ''; position: absolute; bottom: -0.25rem; left: 50%; transform: translateX(-50%); width: 16px; height: 2px; background: #38bdf8; border-radius: 999px; }
+        .apd-tab.active::after { content: ''; position: absolute; bottom: -0.25rem; left: 50%; transform: translateX(-50%); width: 16px; height: 2px; background: #fbbf24; border-radius: 999px; }
         .apd-tab-badge { min-width: 18px; height: 18px; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dc2626; color: white; font-size: 0.625rem; font-weight: 800; }
         @media (min-width: 1024px) {
           .apd-tabs { flex-direction: column; align-items: stretch; gap: 0.25rem; margin-bottom: 0; overflow: visible; }
@@ -264,13 +264,13 @@ window.ApdaCitizenDashboard = {
         @keyframes contentFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .apd-content-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(148,163,184,0.06); }
         .apd-content-title { font-size: 1.125rem; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 0.5rem; }
-        .apd-content-title svg { color: #38bdf8; }
+        .apd-content-title svg { color: #fbbf24; }
 
         /* Sidebar Panel */
         .apd-side { display: flex; flex-direction: column; gap: 1rem; }
         .apd-side-card { background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(148,163,184,0.08); border-radius: 16px; padding: 1.25rem; transition: all 0.3s; }
         .apd-side-card:hover { border-color: rgba(148,163,184,0.12); }
-        .apd-side-title { font-size: 0.6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; margin-bottom: 0.875rem; display: flex; align-items: center; gap: 0.5rem; }
+        .apd-side-title { font-size: 0.6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #95806b; margin-bottom: 0.875rem; display: flex; align-items: center; gap: 0.5rem; }
         .apd-side-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(148,163,184,0.1), transparent); }
 
         /* Activity Feed */
@@ -279,16 +279,19 @@ window.ApdaCitizenDashboard = {
         .apd-activity-item:hover { padding-left: 0.25rem; }
         .apd-activity-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 0.375rem; flex-shrink: 0; }
         .apd-activity-text { font-size: 0.8125rem; color: #cbd5e1; line-height: 1.4; }
-        .apd-activity-time { font-size: 0.6875rem; color: #475569; margin-top: 0.125rem; }
+        .apd-activity-time { font-size: 0.6875rem; color: #95806b; margin-top: 0.125rem; }
 
         /* Emergency Contacts */
-        .apd-contact { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; border-radius: 8px; transition: all 0.2s; cursor: pointer; }
-        .apd-contact:hover { background: rgba(255,255,255,0.03); }
-        .apd-contact-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(30, 41, 59, 0.6); display: grid; place-items: center; color: #38bdf8; font-size: 0.75rem; font-weight: 800; flex-shrink: 0; }
+        .apd-contacts-card { padding: 1rem; }
+        .apd-contacts-card .apd-side-title { margin-bottom: 0.625rem; }
+        .apd-contacts-list { display: grid; gap: 0.25rem; }
+        .apd-contact { display: flex; align-items: center; gap: 0.625rem; padding: 0.375rem; border-radius: 8px; transition: background-color 0.2s ease, transform 0.2s ease; cursor: pointer; }
+        .apd-contact:hover, .apd-contact:focus-visible { background: rgba(255,255,255,0.05); transform: translateX(2px); outline: none; }
+        .apd-contact-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(30, 41, 59, 0.6); display: grid; place-items: center; color: #fbbf24; font-size: 0.75rem; font-weight: 800; flex-shrink: 0; }
         .apd-contact-name { font-size: 0.8125rem; font-weight: 600; color: #e2e8f0; }
         .apd-contact-num { font-size: 0.6875rem; color: #64748b; font-weight: 500; }
-        .apd-contact-call { margin-left: auto; width: 28px; height: 28px; border-radius: 6px; background: rgba(5, 150, 105, 0.1); border: 1px solid rgba(5, 150, 105, 0.15); color: #34d399; display: grid; place-items: center; opacity: 0; transition: all 0.2s; }
-        .apd-contact:hover .apd-contact-call { opacity: 1; }
+        .apd-contact-call { margin-left: auto; width: 26px; height: 26px; border-radius: 6px; background: rgba(5, 150, 105, 0.1); border: 1px solid rgba(5, 150, 105, 0.15); color: #34d399; display: grid; place-items: center; opacity: 0; transform: translateX(4px); transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease; }
+        .apd-contact:hover .apd-contact-call, .apd-contact:focus-visible .apd-contact-call { opacity: 1; transform: translateX(0); }
         .apd-contact-call:hover { background: rgba(5, 150, 105, 0.2); }
 
         /* SOS Button */
@@ -320,11 +323,11 @@ window.ApdaCitizenDashboard = {
         .apd-greeting-row { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.5rem 0 0.5rem; }
         .apd-greeting { min-width: 0; }
         .apd-profile-summary { display: flex; flex-direction: column; align-items: flex-start; }
-        .apd-profile-avatar { width: 96px; height: 96px; border-radius: 28px; background: linear-gradient(135deg, #1e3a5f, #1e40af); display: grid; place-items: center; overflow: hidden; color: #fff; border: 2px solid rgba(56,189,248,.22); font-size: 1.5rem; font-weight: 800; box-shadow: 0 12px 28px rgba(30,64,175,.25); }
+        .apd-profile-avatar { width: 96px; height: 96px; border-radius: 28px; background: linear-gradient(135deg, #78350f, #b45309); display: grid; place-items: center; overflow: hidden; color: #fff; border: 2px solid rgba(251,191,36,.22); font-size: 1.5rem; font-weight: 800; box-shadow: 0 12px 28px rgba(180,83,9,.25); }
         .apd-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .apd-profile-name { margin-top: 0.75rem; color: #f8fafc; font-size: 1.25rem; font-weight: 800; }
         .apd-profile-address { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.25rem; color: #64748b; font-size: 0.75rem; font-weight: 600; }
-        .apd-profile-address svg { width: 14px; height: 14px; color: #38bdf8; }
+        .apd-profile-address svg { width: 14px; height: 14px; color: #fbbf24; }
 
         /* Weather Widget */
         .apd-weather { display: flex; align-items: center; gap: 1rem; padding: 0.875rem; background: rgba(30, 41, 59, 0.3); border-radius: 12px; border: 1px solid rgba(148,163,184,0.06); }
@@ -332,7 +335,7 @@ window.ApdaCitizenDashboard = {
         .apd-weather-temp { font-size: 1.5rem; font-weight: 800; color: #f8fafc; }
         .apd-weather-desc { font-size: 0.75rem; color: #64748b; font-weight: 500; }
         .apd-weather-meta { display: flex; gap: 0.75rem; margin-top: 0.25rem; }
-        .apd-weather-meta span { font-size: 0.6875rem; color: #475569; }
+        .apd-weather-meta span { font-size: 0.6875rem; color: #95806b; }
         .apd-forecast-btn { width: 100%; margin-top: 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid rgba(56,189,248,0.25); border-radius: 8px; background: rgba(14,116,144,0.12); color: #7dd3fc; font-size: 0.75rem; font-weight: 700; transition: all 0.2s; cursor: pointer; }
         .apd-forecast-btn:hover { background: rgba(14,116,144,0.22); border-color: rgba(56,189,248,0.45); color: #e0f2fe; }
         /* ══ Forecast Modal — Warm Amber/Yellow Premium Theme ══ */
@@ -505,7 +508,7 @@ window.ApdaCitizenDashboard = {
          .apd-fc-summary-value { margin-top: .3rem; color: #fff1a7; font-size: .8rem; font-weight: 800; line-height: 1.4; }
          .apd-rain-meter { display: flex; align-items: center; gap: .55rem; margin-top: .5rem; }
          .apd-rain-meter-track { height: 5px; flex: 1; overflow: hidden; border-radius: 99px; background: rgba(147,197,253,.13); }
-         .apd-rain-meter-fill { display: block; width: 72%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #fcd34d, #93c5fd); box-shadow: 0 0 12px rgba(147,197,253,.35); }
+         .apd-rain-meter-fill { display: block; width: 72%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #fcd34d, #f97316); box-shadow: 0 0 12px rgba(249,115,22,.35); }
          .apd-rain-meter span { color: #bfdbfe; font-size: .65rem; font-weight: 800; white-space: nowrap; }
           @media (max-width: 520px) { .apd-fc-summary { grid-template-columns: 1fr; } .apd-chart-title-row { align-items: flex-start; flex-direction: column; gap: .2rem; } }
         /* calendar */
@@ -736,13 +739,13 @@ window.ApdaCitizenDashboard = {
                 </g>
                 <!-- Rain % bar (faint, behind) -->
                 <g opacity="0.22">
-                  <rect x="55"  y="92"  width="36" height="106" rx="4" fill="#93c5fd"/>
-                  <rect x="142" y="101" width="36" height="97"  rx="4" fill="#93c5fd"/>
-                  <rect x="229" y="80"  width="36" height="118" rx="4" fill="#93c5fd"/>
-                  <rect x="316" y="117" width="36" height="81"  rx="4" fill="#93c5fd"/>
-                  <rect x="403" y="110" width="36" height="88"  rx="4" fill="#93c5fd"/>
-                  <rect x="490" y="134" width="36" height="64"  rx="4" fill="#93c5fd"/>
-                  <rect x="564" y="104" width="36" height="94"  rx="4" fill="#93c5fd"/>
+                  <rect x="55"  y="92"  width="36" height="106" rx="4" fill="#fbbf24"/>
+                  <rect x="142" y="101" width="36" height="97"  rx="4" fill="#fbbf24"/>
+                  <rect x="229" y="80"  width="36" height="118" rx="4" fill="#fbbf24"/>
+                  <rect x="316" y="117" width="36" height="81"  rx="4" fill="#fbbf24"/>
+                  <rect x="403" y="110" width="36" height="88"  rx="4" fill="#fbbf24"/>
+                  <rect x="490" y="134" width="36" height="64"  rx="4" fill="#fbbf24"/>
+                  <rect x="564" y="104" width="36" height="94"  rx="4" fill="#fbbf24"/>
                 </g>
                 <!-- Area fill -->
                 <path d="M73 90 L160 78 L247 104 L334 64 L421 78 L508 50 L582 64 L582 198 L73 198 Z" fill="url(#fc-area-grad)"/>
@@ -912,7 +915,7 @@ window.ApdaCitizenDashboard = {
           <div class="apd-side">
 
             <!-- Feature Navigation Rail -->
-            <div class="apd-side-card">
+            <div class="apd-side-card apd-contacts-card">
               <div class="apd-side-title">Features</div>
               <nav class="apd-tabs" aria-label="Citizen dashboard features">
                 ${navTabs.map(t => {
@@ -948,8 +951,8 @@ window.ApdaCitizenDashboard = {
             <!-- Emergency Contacts -->
             <div class="apd-side-card">
               <div class="apd-side-title">Emergency Contacts</div>
-              <div class="space-y-1">
-                <div class="apd-contact" onclick="window.location.href='tel:108'">
+              <div class="apd-contacts-list">
+                <div class="apd-contact" role="button" tabindex="0" onclick="window.location.href='tel:108'" onkeydown="if (event.key === 'Enter' || event.key === ' ') window.location.href='tel:108'">
                   <div class="apd-contact-icon">108</div>
                   <div>
                     <div class="apd-contact-name">Ambulance</div>
@@ -959,7 +962,7 @@ window.ApdaCitizenDashboard = {
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                   </div>
                 </div>
-                <div class="apd-contact" onclick="window.location.href='tel:101'">
+                <div class="apd-contact" role="button" tabindex="0" onclick="window.location.href='tel:101'" onkeydown="if (event.key === 'Enter' || event.key === ' ') window.location.href='tel:101'">
                   <div class="apd-contact-icon">101</div>
                   <div>
                     <div class="apd-contact-name">Fire Service</div>
@@ -969,7 +972,7 @@ window.ApdaCitizenDashboard = {
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                   </div>
                 </div>
-                <div class="apd-contact" onclick="window.location.href='tel:100'">
+                <div class="apd-contact" role="button" tabindex="0" onclick="window.location.href='tel:100'" onkeydown="if (event.key === 'Enter' || event.key === ' ') window.location.href='tel:100'">
                   <div class="apd-contact-icon">100</div>
                   <div>
                     <div class="apd-contact-name">Police</div>
@@ -979,7 +982,7 @@ window.ApdaCitizenDashboard = {
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                   </div>
                 </div>
-                <div class="apd-contact" onclick="window.location.href='tel:1078'">
+                <div class="apd-contact" role="button" tabindex="0" onclick="window.location.href='tel:1078'" onkeydown="if (event.key === 'Enter' || event.key === ' ') window.location.href='tel:1078'">
                   <div class="apd-contact-icon" style="font-size: 0.625rem;">NDRF</div>
                   <div>
                     <div class="apd-contact-name">Disaster Response</div>

@@ -165,9 +165,9 @@ window.ApdaShelterMap = {
         const marker = L.marker(s.coordinates).addTo(this.leafletMap);
         
         marker.bindPopup(`
-          <div style="font-family: inherit; color: #0f172a; padding: 4px;">
+          <div style="font-family: inherit; color: #241d16; padding: 4px;">
             <h4 style="margin: 0; font-weight: bold; font-size: 14px;">${s.name}</h4>
-            <p style="margin: 4px 0; font-size: 12px; color: #475569;">📍 ${s.location} <br><span style="display:inline-block; margin-top:3px; background:#1e293b; color:#67e8f9; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold;">${s.type || 'Safe Zone'}</span></p>
+            <p style="margin: 4px 0; font-size: 12px; color: #695847;">📍 ${s.location} <br><span style="display:inline-block; margin-top:3px; background:#30251c; color:#fcd34d; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold;">${s.type || 'Safe Zone'}</span></p>
             <div style="background: #ecfdf5; border: 1px solid #10b981; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #065f46; margin: 6px 0;">
               ✓ ${vacancy} Available Beds (${s.occupied}/${s.totalCapacity})
             </div>

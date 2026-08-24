@@ -326,10 +326,10 @@ window.ApdaResponderDashboard = {
         }).addTo(this.responderLeafletMap);
 
         marker.bindPopup(`
-          <div style="font-family: inherit; color: #0f172a; padding: 4px;">
+          <div style="font-family: inherit; color: #241d16; padding: 4px;">
             <span style="font-size: 10px; font-weight: bold; background: #fee2e2; color: #b91c1c; padding: 2px 6px; border-radius: 4px;">${req.id} • ${req.severity.toUpperCase()}</span>
             <h4 style="margin: 4px 0; font-size: 13px;">${req.disasterType.toUpperCase()}: ${req.userName}</h4>
-            <p style="margin: 2px 0; font-size: 11px; color: #475569;">${req.address}</p>
+            <p style="margin: 2px 0; font-size: 11px; color: #695847;">${req.address}</p>
             <p style="font-size: 11px; margin: 4px 0;"><strong>${req.peopleAffected} People</strong> | AI Risk: <strong>${req.aiScore.riskScore}/100</strong></p>
             <button onclick="window.ApdaResponderDashboard.openDispatchModal('${req.id}')" style="width: 100%; background: #b45309; color: white; border: none; padding: 5px; border-radius: 6px; font-weight: bold; font-size: 11px; cursor: pointer; margin-top: 4px;">
               Dispatch Response Unit →
@@ -351,7 +351,7 @@ window.ApdaResponderDashboard = {
         }).addTo(this.responderLeafletMap);
 
         marker.bindPopup(`
-          <div style="font-family: inherit; color: #0f172a; padding: 4px;">
+          <div style="font-family: inherit; color: #241d16; padding: 4px;">
             <h4 style="margin: 0; font-size: 13px; color: #b45309;">🚒 ${u.name}</h4>
             <p style="margin: 3px 0; font-size: 11px;">Leader: ${u.leader} (${u.phone})</p>
             <p style="margin: 3px 0; font-size: 11px;">Status: <strong>${u.status}</strong> (${u.personnel} personnel)</p>
@@ -372,7 +372,7 @@ window.ApdaResponderDashboard = {
         }).addTo(this.responderLeafletMap);
 
         marker.bindPopup(`
-          <div style="font-family: inherit; color: #0f172a; padding: 4px;">
+          <div style="font-family: inherit; color: #241d16; padding: 4px;">
             <h4 style="margin: 0; font-size: 13px; color: #065f46;">🏠 ${s.name}</h4>
             <p style="margin: 3px 0; font-size: 11px;">Occupied: ${s.occupied}/${s.totalCapacity} beds</p>
           </div>
