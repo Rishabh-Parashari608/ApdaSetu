@@ -2,6 +2,7 @@
 
 window.ApdaI18n = {
   currentLang: localStorage.getItem('apdasetu_lang') || 'en',
+  observer: null,
   
   languages: [
     { code: 'en', name: 'English', native: 'English' },
@@ -363,6 +364,21 @@ window.ApdaI18n = {
     }
   },
 
+  /* Shared dashboard language. This maps the labels that are reused by the
+     citizen, volunteer and commander workspaces but were previously hard-coded. */
+  interfaceText: {
+    en: { 'Weather': 'Weather', 'Features': 'Features', 'Activity': 'Activity', 'Profile': 'Profile', 'View Forecast': 'View Forecast', 'Emergency Contacts': 'Emergency Contacts', 'Ambulance': 'Ambulance', 'Fire Service': 'Fire Service', 'Police': 'Police', 'Disaster Response': 'Disaster Response', 'National Emergency': 'National Emergency', 'State Emergency': 'State Emergency', 'NDRF Helpline': 'NDRF Helpline', 'Last updated: Just now': 'Last updated: Just now', 'Heavy Rain Expected': 'Heavy Rain Expected', 'Online Now': 'Online Now', 'Avg Response': 'Avg Response', 'Nearby Shelters': 'Nearby Shelters', 'Active Alerts': 'Active Alerts', 'Today': 'Today', 'Calendar': 'Calendar', 'Select a forecast date': 'Select a forecast date', 'Selected day': 'Selected day', 'Temperature': 'Temperature', 'Close forecast': 'Close forecast', 'Close calendar': 'Close calendar', 'Refresh': 'Refresh', 'Login': 'Login', 'Sign up': 'Sign up', 'Logout': 'Logout', '112 / Helplines': '112 / Helplines' },
+    hi: { 'Weather': 'मौसम', 'Features': 'सुविधाएँ', 'Activity': 'गतिविधि', 'Profile': 'प्रोफ़ाइल', 'View Forecast': 'पूर्वानुमान देखें', 'Emergency Contacts': 'आपातकालीन संपर्क', 'Ambulance': 'एम्बुलेंस', 'Fire Service': 'अग्निशमन सेवा', 'Police': 'पुलिस', 'Disaster Response': 'आपदा प्रतिक्रिया', 'National Emergency': 'राष्ट्रीय आपातकाल', 'State Emergency': 'राज्य आपातकाल', 'NDRF Helpline': 'एनडीआरएफ हेल्पलाइन', 'Last updated: Just now': 'अंतिम अपडेट: अभी', 'Heavy Rain Expected': 'भारी बारिश की संभावना', 'Online Now': 'अभी ऑनलाइन', 'Avg Response': 'औसत प्रतिक्रिया', 'Nearby Shelters': 'निकटवर्ती आश्रय स्थल', 'Active Alerts': 'सक्रिय अलर्ट', 'Today': 'आज', 'Calendar': 'कैलेंडर', 'Select a forecast date': 'पूर्वानुमान तिथि चुनें', 'Selected day': 'चुना गया दिन', 'Temperature': 'तापमान', 'Close forecast': 'पूर्वानुमान बंद करें', 'Close calendar': 'कैलेंडर बंद करें', 'Refresh': 'रीफ़्रेश', 'Login': 'लॉगिन', 'Sign up': 'साइन अप', 'Logout': 'लॉग आउट', '112 / Helplines': '112 / हेल्पलाइन' },
+    bn: { 'Weather': 'আবহাওয়া', 'Features': 'বৈশিষ্ট্য', 'Activity': 'কার্যকলাপ', 'Profile': 'প্রোফাইল', 'View Forecast': 'পূর্বাভাস দেখুন', 'Emergency Contacts': 'জরুরি যোগাযোগ', 'Ambulance': 'অ্যাম্বুলেন্স', 'Fire Service': 'দমকল পরিষেবা', 'Police': 'পুলিশ', 'Disaster Response': 'দুর্যোগ প্রতিক্রিয়া', 'National Emergency': 'জাতীয় জরুরি', 'State Emergency': 'রাজ্য জরুরি', 'NDRF Helpline': 'এনডিআরএফ হেল্পলাইন', 'Last updated: Just now': 'শেষ আপডেট: এইমাত্র', 'Heavy Rain Expected': 'ভারী বৃষ্টির সম্ভাবনা', 'Online Now': 'এখন অনলাইনে', 'Avg Response': 'গড় সাড়া', 'Nearby Shelters': 'নিকটবর্তী আশ্রয়কেন্দ্র', 'Active Alerts': 'সক্রিয় সতর্কতা', 'Today': 'আজ', 'Calendar': 'ক্যালেন্ডার', 'Select a forecast date': 'পূর্বাভাসের তারিখ বাছুন', 'Selected day': 'নির্বাচিত দিন', 'Temperature': 'তাপমাত্রা', 'Close forecast': 'পূর্বাভাস বন্ধ করুন', 'Close calendar': 'ক্যালেন্ডার বন্ধ করুন', 'Refresh': 'রিফ্রেশ', 'Login': 'লগইন', 'Sign up': 'নিবন্ধন', 'Logout': 'লগ আউট', '112 / Helplines': '112 / হেল্পলাইন' },
+    mr: { 'Weather': 'हवामान', 'Features': 'वैशिष्ट्ये', 'Activity': 'क्रियाकलाप', 'Profile': 'प्रोफाइल', 'View Forecast': 'अंदाज पहा', 'Emergency Contacts': 'आपत्कालीन संपर्क', 'Ambulance': 'रुग्णवाहिका', 'Fire Service': 'अग्निशमन सेवा', 'Police': 'पोलीस', 'Disaster Response': 'आपत्ती प्रतिसाद', 'National Emergency': 'राष्ट्रीय आपत्कालीन सेवा', 'State Emergency': 'राज्य आपत्कालीन सेवा', 'NDRF Helpline': 'एनडीआरएफ हेल्पलाइन', 'Last updated: Just now': 'शेवटचे अद्यतन: आत्ताच', 'Heavy Rain Expected': 'मुसळधार पावसाची शक्यता', 'Online Now': 'आता ऑनलाइन', 'Avg Response': 'सरासरी प्रतिसाद', 'Nearby Shelters': 'जवळची निवारे', 'Active Alerts': 'सक्रिय इशारे', 'Today': 'आज', 'Calendar': 'दिनदर्शिका', 'Select a forecast date': 'अंदाजाची तारीख निवडा', 'Selected day': 'निवडलेला दिवस', 'Temperature': 'तापमान', 'Close forecast': 'अंदाज बंद करा', 'Close calendar': 'दिनदर्शिका बंद करा', 'Refresh': 'रीफ्रेश', 'Login': 'लॉगिन', 'Sign up': 'नोंदणी', 'Logout': 'लॉग आउट', '112 / Helplines': '112 / हेल्पलाइन' },
+    or: { 'Weather': 'ପାଣିପାଗ', 'Features': 'ବୈଶିଷ୍ଟ୍ୟ', 'Activity': 'କାର୍ଯ୍ୟକଳାପ', 'Profile': 'ପ୍ରୋଫାଇଲ୍', 'View Forecast': 'ପୂର୍ବାନୁମାନ ଦେଖନ୍ତୁ', 'Emergency Contacts': 'ଜରୁରୀ ସମ୍ପର୍କ', 'Ambulance': 'ଆମ୍ବୁଲାନ୍ସ', 'Fire Service': 'ଅଗ୍ନିଶମ ସେବା', 'Police': 'ପୁଲିସ', 'Disaster Response': 'ବିପର୍ଯ୍ୟୟ ପ୍ରତିକ୍ରିୟା', 'National Emergency': 'ଜାତୀୟ ଜରୁରୀ', 'State Emergency': 'ରାଜ୍ୟ ଜରୁରୀ', 'NDRF Helpline': 'ଏନଡିଆରଏଫ୍ ହେଲ୍ପଲାଇନ୍', 'Last updated: Just now': 'ଶେଷ ଅଦ୍ୟତନ: ବର୍ତ୍ତମାନ', 'Heavy Rain Expected': 'ପ୍ରବଳ ବର୍ଷା ସମ୍ଭାବନା', 'Online Now': 'ବର୍ତ୍ତମାନ ଅନଲାଇନ୍', 'Avg Response': 'ହାରାହାରି ପ୍ରତିକ୍ରିୟା', 'Nearby Shelters': 'ନିକଟସ୍ଥ ଆଶ୍ରୟସ୍ଥଳ', 'Active Alerts': 'ସକ୍ରିୟ ସତର୍କତା', 'Today': 'ଆଜି', 'Calendar': 'କ୍ୟାଲେଣ୍ଡର', 'Select a forecast date': 'ପୂର୍ବାନୁମାନ ତାରିଖ ବାଛନ୍ତୁ', 'Selected day': 'ବାଛିଥିବା ଦିନ', 'Temperature': 'ତାପମାତ୍ରା', 'Close forecast': 'ପୂର୍ବାନୁମାନ ବନ୍ଦ କରନ୍ତୁ', 'Close calendar': 'କ୍ୟାଲେଣ୍ଡର ବନ୍ଦ କରନ୍ତୁ', 'Refresh': 'ରିଫ୍ରେଶ', 'Login': 'ଲଗଇନ୍', 'Sign up': 'ନିବନ୍ଧନ', 'Logout': 'ଲଗ ଆଉଟ', '112 / Helplines': '112 / ହେଲ୍ପଲାଇନ୍' },
+    as: { 'Weather': 'বতৰ', 'Features': 'বৈশিষ্ট্য', 'Activity': 'কাৰ্যকলাপ', 'Profile': 'প্ৰ’ফাইল', 'View Forecast': 'পূৰ্বানুমান চাওক', 'Emergency Contacts': 'জৰুৰী যোগাযোগ', 'Ambulance': 'এম্বুলেন্স', 'Fire Service': 'অগ্নিনিৰ্বাপক সেৱা', 'Police': 'পুলিচ', 'Disaster Response': 'দুৰ্যোগ সঁহাৰি', 'National Emergency': 'ৰাষ্ট্ৰীয় জৰুৰী', 'State Emergency': 'ৰাজ্য জৰুৰী', 'NDRF Helpline': 'এনডিআৰএফ হেল্পলাইন', 'Last updated: Just now': 'শেষ আপডেট: এতিয়াই', 'Heavy Rain Expected': 'ধাৰাসাৰ বৰষুণৰ সম্ভাৱনা', 'Online Now': 'এতিয়া অনলাইন', 'Avg Response': 'গড় সঁহাৰি', 'Nearby Shelters': 'ওচৰৰ আশ্ৰয় শিবিৰ', 'Active Alerts': 'সক্ৰিয় সতৰ্কবাৰ্তা', 'Today': 'আজি', 'Calendar': 'কেলেণ্ডাৰ', 'Select a forecast date': 'পূৰ্বানুমানৰ তাৰিখ বাছক', 'Selected day': 'বাছনি কৰা দিন', 'Temperature': 'তাপমান', 'Close forecast': 'পূৰ্বানুমান বন্ধ কৰক', 'Close calendar': 'কেলেণ্ডাৰ বন্ধ কৰক', 'Refresh': 'ৰিফ্ৰেশ', 'Login': 'লগইন', 'Sign up': 'নিবন্ধন', 'Logout': 'লগ আউট', '112 / Helplines': '112 / হেল্পলাইন' }
+  },
+
+  phraseKeys: {
+    'Alerts': 'liveAlerts', 'Shelters': 'shelterMap', 'Requests': 'myRequests', 'Chat': 'communityChat', 'Family': 'familyCheckin', 'Guides': 'safetyGuides', 'Updates': 'communityUpdates', 'Command Center': 'volunteerCommand', 'Emergency SOS': 'quickSos', 'Emergency Contacts': 'emergencyHelplines', 'SOS Emergency Report': 'sosReport'
+  },
+
   t(key) {
     const lang = this.currentLang;
     if (this.translations[lang] && this.translations[lang][key]) {
@@ -371,10 +387,54 @@ window.ApdaI18n = {
     return (this.translations['en'] && this.translations['en'][key]) || key;
   },
 
+  translateText(value) {
+    const text = String(value || '').trim();
+    if (!text || this.currentLang === 'en') return text;
+    const key = this.phraseKeys[text] || Object.keys(this.translations.en || {}).find((translationKey) => this.translations.en[translationKey] === text);
+    if (key) return this.t(key);
+    return (this.interfaceText[this.currentLang] && this.interfaceText[this.currentLang][text]) || text;
+  },
+
+  translateDocument(root = document) {
+    if (this.currentLang === 'en' || !root) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) => {
+        const parent = node.parentElement;
+        if (!parent || ['SCRIPT', 'STYLE', 'CODE'].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
+        return node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach((node) => {
+      const original = node.nodeValue;
+      const translated = this.translateText(original);
+      if (translated !== original.trim()) node.nodeValue = original.replace(original.trim(), translated);
+    });
+    root.querySelectorAll?.('[placeholder], [title], [aria-label]').forEach((element) => {
+      ['placeholder', 'title', 'aria-label'].forEach((attribute) => {
+        const original = element.getAttribute(attribute);
+        const translated = this.translateText(original);
+        if (translated !== original) element.setAttribute(attribute, translated);
+      });
+    });
+  },
+
+  observeDocument() {
+    if (this.observer) this.observer.disconnect();
+    this.observer = new MutationObserver((records) => {
+      records.forEach((record) => record.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) this.translateDocument(node);
+      }));
+    });
+    this.observer.observe(document.body, { childList: true, subtree: true });
+  },
+
   setLanguage(code) {
     if (this.translations[code]) {
       this.currentLang = code;
       localStorage.setItem('apdasetu_lang', code);
+      document.documentElement.lang = code;
       window.dispatchEvent(new CustomEvent('apdasetu_lang_changed', { detail: { lang: code } }));
     }
   }
