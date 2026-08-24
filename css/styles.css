@@ -44,13 +44,13 @@ h1, h2, h3, h4 {
 .home-hero {
   background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/74/NDRF_in_Bihar_Flood.jpg');
   background-size: cover;
-  background-position: center;
+  background-position: center 42%;
   border-radius: 2rem;
   overflow: hidden;
 }
 
 .home-hero-overlay {
-  background: linear-gradient(90deg, rgba(5, 12, 24, .94) 0%, rgba(8, 17, 32, .76) 52%, rgba(8, 17, 32, .34) 100%), linear-gradient(180deg, rgba(5, 15, 31, .3), rgba(5, 15, 31, .84));
+  background: linear-gradient(90deg, rgba(5, 12, 24, .78) 0%, rgba(8, 17, 32, .48) 54%, rgba(8, 17, 32, .12) 100%), linear-gradient(180deg, rgba(6, 24, 42, .04), rgba(5, 15, 31, .56));
 }
 
 /* Glassmorphism Cards */
@@ -573,6 +573,91 @@ body { top: 0 !important; }
 @keyframes emergency-ai-open { to { transform:translateY(0) scale(1); opacity:1; } }
 @keyframes assistant-breathe { from { opacity:.55; } to { opacity:1; } }
 @media (max-width: 640px) { .emergency-ai-widget { right:.75rem; bottom:.75rem; }.emergency-ai-panel { right:.75rem; bottom:5rem; }.emergency-assistant__messages { height:15rem; }.emergency-assistant__message { max-width:93%; }.emergency-ai-status { display:none; } }
+
+/* Homepage polish: clear emergency hierarchy without visual noise. */
+.home-hero {
+  min-height: calc(100svh - 5rem);
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 30px 70px -35px rgba(0, 0, 0, .95), 0 0 0 1px rgba(125, 211, 252, .12);
+}
+.home-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  border: 1px solid rgba(186, 230, 253, .16);
+}
+.home-hero__content { width: 100%; padding-top: 2.25rem; }
+.home-hero__eyebrow {
+  box-shadow: inset 0 1px rgba(255,255,255,.12), 0 8px 30px rgba(8, 145, 178, .13);
+}
+.home-hero__title { text-shadow: 0 6px 28px rgba(1, 8, 24, .48); }
+.hero-primary-cta {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 14px 32px rgba(220, 38, 38, .4), inset 0 1px rgba(255,255,255,.25);
+}
+.hero-primary-cta::after {
+  content: '';
+  position: absolute;
+  top: -70%; left: -30%; width: 25%; height: 240%;
+  background: rgba(255,255,255,.28);
+  transform: rotate(22deg);
+  transition: left .55s ease;
+}
+.hero-primary-cta:hover::after { left: 120%; }
+.hero-secondary-cta { box-shadow: inset 0 1px rgba(255,255,255,.08), 0 10px 24px rgba(1, 8, 24, .26); }
+.stats-bar {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.stats-bar .glass-panel { background: linear-gradient(155deg, rgba(35, 74, 130, .92), rgba(16, 39, 77, .94)); }
+.stats-bar .glass-panel:hover { transform: translateY(-5px); }
+
+/* More intentional elevation and rhythm for workflow and capability cards. */
+.home-hero + section .glass-panel,
+.home-hero ~ section .grid .glass-panel {
+  position: relative;
+  overflow: hidden;
+}
+.home-hero ~ section .grid .glass-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(103, 232, 249, .08), transparent 36%);
+  opacity: 0;
+  transition: opacity .22s ease;
+  pointer-events: none;
+}
+.home-hero ~ section .grid .glass-panel:hover::before { opacity: 1; }
+
+/* Assistant: concise, easier to scan, and accessible at small widths. */
+.emergency-ai-panel {
+  width: min(25.5rem, calc(100vw - 2rem));
+  border-radius: 1.35rem;
+  box-shadow: 0 28px 70px -24px rgba(0,0,0,.96), 0 0 0 1px rgba(251,191,36,.12) inset, 0 0 38px rgba(245,158,11,.1);
+}
+.emergency-ai-panel__header { min-height: 4.9rem; padding: .9rem 1rem; }
+.emergency-assistant__bot-icon { width: 2.55rem; height: 2.55rem; border-radius: .85rem; font-size: 1.18rem; }
+.emergency-assistant__messages { height: 17.5rem; padding: 1rem; }
+.emergency-assistant__message { padding: .72rem .82rem; font-size: .76rem; box-shadow: 0 6px 14px rgba(0,0,0,.12); }
+.emergency-ai-panel__footer { padding: .85rem 1rem 1rem; }
+.emergency-assistant__suggestion { padding: .36rem .64rem; font-size: .63rem; }
+.emergency-ai-panel input { min-height: 2.9rem; border-radius: .85rem; }
+.emergency-assistant__send { min-height: 2.9rem; border-radius: .85rem; }
+.emergency-ai-launcher { min-height: 3.45rem; padding-right: .95rem; }
+@media (max-width: 640px) {
+  .home-hero { min-height: calc(100svh - 4.25rem); border-radius: 1.45rem; background-position: 58% center; }
+  .home-hero__content { padding-top: .5rem; }
+  .emergency-ai-panel { width: calc(100vw - 1.5rem); }
+  .emergency-assistant__messages { height: min(17rem, 38dvh); }
+}
 
 .stats-bar .stat-icon-amber {
   background: rgba(251, 191, 36, .14);

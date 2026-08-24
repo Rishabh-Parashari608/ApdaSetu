@@ -1,12 +1,12 @@
-// Auth & Role Selection Modal with 1-Click Quick Demo Presets
+// Auth & Role Selection Modal
 
 window.ApdaAuthModal = {
-  activeTab: 'demo', // [volunteer done] 'demo' | 'citizen' | 'responder' | 'volunteer'
+  activeTab: 'citizen', // 'citizen' | 'responder' | 'volunteer'
   authMode: 'login', // 'login' | 'signup'
   selectedDemoVolunteerId: 'VLT-001', // [volunteer done] Presenter-selected identity for the volunteer response demo.
 
-  open(defaultTab = 'demo', authMode = 'login') {
-    this.activeTab = defaultTab;
+  open(defaultTab = 'citizen', authMode = 'login') {
+    this.activeTab = ['citizen', 'responder', 'volunteer'].includes(defaultTab) ? defaultTab : 'citizen';
     this.authMode = authMode;
     this.close();
 
@@ -44,7 +44,7 @@ window.ApdaAuthModal = {
             <span class="text-2xl">${this.authMode === 'signup' ? '📝' : '🔐'}</span>
             <div>
               <h3 class="font-extrabold text-xl text-white">${this.authMode === 'signup' ? 'Create your ApdaSetu account' : 'Login to ApdaSetu'}</h3>
-              <p class="text-xs text-slate-400">${this.authMode === 'signup' ? 'Choose the interface that matches your role' : 'Select your role or use 1-Click Quick Demo'}</p>
+              <p class="text-xs text-slate-400">${this.authMode === 'signup' ? 'Choose the interface that matches your role' : 'Select your role to continue securely'}</p>
             </div>
           </div>
           <button onclick="window.ApdaAuthModal.close()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 font-bold">×</button>
@@ -57,9 +57,6 @@ window.ApdaAuthModal = {
 
         <!-- Role Tabs -->
         <div class="flex rounded-xl bg-slate-900/90 p-1 mt-4 border border-slate-800">
-          <button onclick="window.ApdaAuthModal.switchTab('demo')" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all ${this.activeTab === 'demo' ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">
-            ⚡ Quick Demo Login
-          </button>
           <button onclick="window.ApdaAuthModal.switchTab('citizen')" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all ${this.activeTab === 'citizen' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">
             👤 Citizen
           </button>
@@ -74,7 +71,6 @@ window.ApdaAuthModal = {
 
         <!-- Tab Body -->
         <div class="mt-5">
-          ${this.activeTab === 'demo' ? this.renderDemoTab() : ''}
           ${this.activeTab === 'citizen' ? this.renderCitizenTab() : ''}
           ${this.activeTab === 'responder' ? this.renderResponderTab() : ''}
           ${this.activeTab === 'volunteer' ? this.renderVolunteerTab() : ''}
@@ -152,15 +148,15 @@ window.ApdaAuthModal = {
       <form onsubmit="window.ApdaAuthModal.handleCustomLogin(event, 'citizen')" class="space-y-3.5">
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">Full Name</label>
-          <input type="text" id="citizen-name" required placeholder="e.g. Rahul Das" value="Rahul Das" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+          <input type="text" id="citizen-name" required autocomplete="name" placeholder="Enter your full name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-300 mb-1">Mobile Number (with OTP stub)</label>
-          <input type="tel" id="citizen-phone" required placeholder="+91 98765 43210" value="+91 98765 12345" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+          <label class="block text-xs font-bold text-slate-300 mb-1">Mobile Number</label>
+          <input type="tel" id="citizen-phone" required autocomplete="tel" placeholder="+91 98765 43210" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">Current Disaster Zone / City</label>
-          <input type="text" id="citizen-city" placeholder="e.g. Guwahati, Assam" value="Guwahati, Assam" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+          <input type="text" id="citizen-city" autocomplete="address-level2" placeholder="e.g. Guwahati, Assam" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
         </div>
         <button type="submit" class="w-full py-3 bg-red-600 hover:bg-red-500 font-bold rounded-xl text-white text-sm shadow-lg shadow-red-600/30 transition-all mt-2">
           ${this.authMode === 'signup' ? 'Create Citizen Account →' : 'Continue as Citizen →'}
@@ -174,7 +170,7 @@ window.ApdaAuthModal = {
       <form onsubmit="window.ApdaAuthModal.handleCustomLogin(event, 'responder')" class="space-y-3.5">
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">Responder Officer Name</label>
-          <input type="text" id="responder-name" required placeholder="Officer Name" value="Commander V. Nair" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          <input type="text" id="responder-name" required autocomplete="name" placeholder="Enter officer name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">Organization / Agency</label>
@@ -189,7 +185,7 @@ window.ApdaAuthModal = {
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">Official ID / Badge #</label>
-          <input type="text" id="responder-badge" placeholder="e.g. NDRF-HQ-492" value="NDRF-HQ-492" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          <input type="text" id="responder-badge" autocomplete="off" placeholder="e.g. NDRF-HQ-492" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
         </div>
         <button type="submit" class="w-full py-3 bg-amber-600 hover:bg-amber-500 font-bold rounded-xl text-white text-sm shadow-lg shadow-amber-600/30 transition-all mt-2">
           ${this.authMode === 'signup' ? 'Create Responder Account →' : 'Open Command Dashboard →'}

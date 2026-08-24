@@ -28,20 +28,20 @@ window.ApdaHomepage = {
         </div>
 
         <!-- Hero Section -->
-        <section class="home-hero reveal-on-scroll relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <section class="home-hero reveal-on-scroll relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-none mx-auto">
           <div class="home-hero-overlay absolute inset-0 rounded-[2rem] pointer-events-none"></div>
           <!-- Background Glows -->
           <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
           <div class="absolute top-1/3 right-10 w-72 h-72 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-          <div class="text-center relative z-10 max-w-3xl mx-auto">
+          <div class="home-hero__content text-center relative z-10 max-w-3xl mx-auto">
             
-            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-400/10 border border-cyan-300/25 text-cyan-200 text-xs font-bold mb-6">
+            <div class="home-hero__eyebrow inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-400/10 border border-cyan-300/25 text-cyan-200 text-xs font-bold mb-6">
               <span class="w-2 h-2 rounded-full bg-cyan-300 animate-ping"></span>
               National Multi-Agency Disaster Coordination Bridge
             </div>
 
-            <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-white leading-tight">
+            <h1 class="home-hero__title text-4xl sm:text-6xl font-black tracking-tight text-white leading-tight">
               Rapid Alert & AI-Powered Rescue <br>
               <span class="bg-gradient-to-r from-cyan-300 via-sky-400 to-indigo-400 bg-clip-text text-transparent">
                 When Seconds Save Lives.
