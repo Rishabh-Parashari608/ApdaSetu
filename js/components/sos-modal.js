@@ -114,27 +114,59 @@ window.ApdaSOSModal = {
   triggerPanicSOS() {
     this.close();
     this.countdownSeconds = 5;
+    const TOTAL = 5;
+    const CIRCUMFERENCE = 345; // 2π × r (r≈54.9) for the SVG ring
 
     const modal = document.createElement('div');
     modal.id = 'panic-countdown-modal';
-    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-red-950/90 backdrop-blur-lg modal-animate-in';
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4';
     modal.innerHTML = `
-      <div class="glass-panel-danger w-full max-w-md rounded-3xl p-8 text-center text-white border-2 border-red-500 shadow-2xl relative animate-radar">
-        <div class="w-24 h-24 rounded-full bg-red-600/30 border-4 border-red-500 flex items-center justify-center mx-auto mb-4 animate-beacon">
-          <span class="text-4xl font-black text-white" id="panic-countdown-num">5</span>
+      <div class="sos-countdown-card w-full max-w-sm p-7 text-center text-white" style="position:relative;">
+
+        <!-- Radar sweep aura rings (decorative, behind card) -->
+        <div class="sos-aura-ring"></div>
+        <div class="sos-aura-ring"></div>
+        <div class="sos-aura-ring"></div>
+
+        <!-- Status pills -->
+        <div class="sos-status-bar">
+          <span class="sos-pill"><span class="sos-pill-dot"></span>GPS Locking</span>
+          <span class="sos-pill"><span class="sos-pill-dot" style="animation-delay:.4s"></span>NDRF Notifying</span>
+          <span class="sos-pill"><span class="sos-pill-dot" style="animation-delay:.8s"></span>Family Alert</span>
         </div>
-        
-        <h2 class="text-2xl font-black text-red-400 uppercase tracking-wide">Transmitting Emergency SOS</h2>
-        <p class="text-xs text-slate-300 mt-2">
-          Locking GPS coordinates & notifying NDRF Command + 3 Family Contacts...
+
+        <!-- SVG Countdown Ring -->
+        <div class="sos-ring-wrap">
+          <svg class="sos-ring-svg" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff8080"/>
+                <stop offset="100%" stop-color="#cc0000"/>
+              </linearGradient>
+            </defs>
+            <circle class="sos-ring-track" cx="65" cy="65" r="54.9"/>
+            <circle class="sos-ring-progress" id="sos-ring-arc" cx="65" cy="65" r="54.9"/>
+          </svg>
+          <div class="sos-num-badge">
+            <span class="sos-num count-blow" id="panic-countdown-num">5</span>
+            <span class="sos-num-label">seconds</span>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <h2 class="sos-countdown-title">Transmitting Emergency SOS</h2>
+        <p class="sos-countdown-sub">
+          Locking GPS coordinates &amp; notifying NDRF Command + 3 Family Contacts...
         </p>
 
-        <div class="mt-6 flex flex-col gap-3">
-          <button onclick="window.ApdaSOSModal.executeInstantSOS()" class="w-full py-3.5 bg-red-600 hover:bg-red-500 font-extrabold text-white rounded-2xl shadow-xl shadow-red-600/60 uppercase tracking-wider text-sm transition-transform active:scale-95">
-            🚨 Send Immediately (Skip Timer)
+        <div class="sos-divider"></div>
+
+        <!-- Buttons -->
+        <div style="display:flex;flex-direction:column;gap:0.6rem;position:relative;z-index:1;">
+          <button onclick="window.ApdaSOSModal.executeInstantSOS()" class="sos-send-btn">
+            🚨&nbsp; Send Immediately (Skip Timer)
           </button>
-          
-          <button onclick="window.ApdaSOSModal.cancelPanicSOS()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold rounded-2xl border border-slate-700 text-xs transition-colors">
+          <button onclick="window.ApdaSOSModal.cancelPanicSOS()" class="sos-cancel-btn">
             ✕ False Alarm / Cancel SOS
           </button>
         </div>
@@ -146,10 +178,38 @@ window.ApdaSOSModal = {
       window.ApdaSoundEngine.playChime('sos');
     }
 
+    // Kick off the ring immediately at full (offset=0 means full ring)
+    const arc = document.getElementById('sos-ring-arc');
+    if (arc) arc.style.strokeDashoffset = '0';
+
     this.countdownTimer = setInterval(() => {
       this.countdownSeconds -= 1;
       const numEl = document.getElementById('panic-countdown-num');
-      if (numEl) numEl.textContent = this.countdownSeconds;
+      const arcEl = document.getElementById('sos-ring-arc');
+      const card = modal.querySelector('.sos-countdown-card');
+
+      if (numEl) {
+        // Remove then re-add class to retrigger the blow animation
+        numEl.classList.remove('count-blow');
+        void numEl.offsetWidth; // force reflow
+        numEl.textContent = this.countdownSeconds;
+        numEl.classList.add('count-blow');
+      }
+
+      // Update SVG ring progress
+      if (arcEl) {
+        const elapsed = TOTAL - this.countdownSeconds;
+        const offset = (elapsed / TOTAL) * CIRCUMFERENCE;
+        arcEl.style.strokeDashoffset = offset;
+      }
+
+      // Flash overlay on each tick
+      if (card) {
+        const flash = document.createElement('div');
+        flash.className = 'sos-tick-flash';
+        card.appendChild(flash);
+        setTimeout(() => flash.remove(), 500);
+      }
 
       if (this.countdownSeconds <= 0) {
         clearInterval(this.countdownTimer);

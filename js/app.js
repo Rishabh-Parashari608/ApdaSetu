@@ -73,8 +73,6 @@ window.ApdaApp = {
             ${mainContent}
           </main>
         </div>
-
-        ${this.renderFooter()}
       </div>
       ${window.ApdaEmergencyAssistant.renderWidget()}
     `;
