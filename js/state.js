@@ -72,6 +72,11 @@ window.ApdaState = {
     } else {
       this.volunteers = [...window.ApdaSeedData.volunteers];
     }
+    // [volunteer done] Safely upgrade persisted demo profiles and enforce an already-reached service limit.
+    this.volunteers.forEach(volunteer => {
+      if (typeof volunteer.activeServiceHours !== 'number') volunteer.activeServiceHours = 0;
+      if (this.getVolunteerServiceInfo(volunteer).reached) volunteer.availability = 'offline';
+    });
 
     const savedKit = localStorage.getItem('apdasetu_kit_checked');
     if (savedKit) {
@@ -135,6 +140,20 @@ window.ApdaState = {
     return Math.max(3, Math.ceil((distanceKm || 0) / 0.47));
   },
 
+  // [volunteer done] A 12-hour shift cap protects availability while preserving total historical hours served.
+  getVolunteerServiceInfo(volunteer) {
+    const maxHours = 12;
+    const liveHours = volunteer.activeServiceStartedAt ? (Date.now() - volunteer.activeServiceStartedAt) / 3600000 : 0;
+    const usedHours = Math.min(maxHours, (Number(volunteer.activeServiceHours) || 0) + liveHours);
+    const remainingHours = Math.max(0, maxHours - usedHours);
+    return { maxHours, usedHours, remainingHours, percent: Math.min(100, Math.round((usedHours / maxHours) * 100)), reached: usedHours >= maxHours, warning: remainingHours <= 1 ? '1 HOUR REMAINING' : remainingHours <= 2 ? '2 HOURS REMAINING' : '' };
+  },
+
+  // [volunteer done] New targeting excludes verified volunteers who are offline or at the service cap.
+  isVolunteerEligible(volunteer) {
+    return Boolean(volunteer?.verified && volunteer.availability === 'available' && !this.getVolunteerServiceInfo(volunteer).reached);
+  },
+
   // [volunteer done] Commander creates one targeted request per incident; only verified, available volunteers qualify.
   mobilizeNearbyVolunteers(requestId, options = {}) {
     const request = this.requests.find(r => r.id === requestId);
@@ -148,7 +167,7 @@ window.ApdaState = {
       return;
     }
     const rules = this.getVolunteerRules(request.severity);
-    const targets = this.volunteers.filter(v => v.verified && v.availability === 'available').map(v => {
+    const targets = this.volunteers.filter(v => this.isVolunteerEligible(v)).map(v => {
       const distanceKm = this.calculateDistanceKm(v.coordinates, request.coordinates);
       return distanceKm !== null && distanceKm <= rules.radiusKm ? { volunteerId: v.id, distanceKm: Number(distanceKm.toFixed(1)), etaMinutes: this.estimateVolunteerEta(distanceKm), status: 'notified' } : null;
     }).filter(Boolean);
@@ -191,6 +210,10 @@ window.ApdaState = {
   setVolunteerAvailability(volunteerId, availability) {
     const volunteer = this.volunteers.find(v => v.id === volunteerId);
     if (!volunteer) return;
+    if (availability === 'available' && this.getVolunteerServiceInfo(volunteer).reached) {
+      this.notify('MAXIMUM SERVICE LIMIT REACHED — volunteer remains OFFLINE.', 'warning');
+      return;
+    }
     volunteer.availability = availability;
     this.syncVolunteerNetwork();
     this.notify(`Volunteer status set to ${availability === 'available' ? 'AVAILABLE' : 'OFFLINE'}.`, 'info');
@@ -207,12 +230,20 @@ window.ApdaState = {
     if (mobilization.isScramble && ['accepted', 'declined'].includes(status) && this.currentUser?.id === volunteerId && window.ApdaSoundEngine) window.ApdaSoundEngine.stopEmergencySiren();
     target.status = status;
     target.updatedAt = Date.now();
-    if (status === 'accepted') target.acceptedAt = target.updatedAt;
+    if (status === 'accepted') {
+      target.acceptedAt = target.updatedAt;
+      if (!volunteer.activeServiceStartedAt) volunteer.activeServiceStartedAt = target.updatedAt; // [volunteer done] Start live service-time tracking only after task acceptance.
+    }
     if (status === 'on_site') {
       mobilization.groundConfirmedBy = { id: volunteer.id, name: volunteer.name, verified: true, at: target.updatedAt };
       mobilization.status = 'ground_confirmed';
     }
     if (status === 'completed') {
+      const serviceInfo = this.getVolunteerServiceInfo(volunteer);
+      const liveHours = volunteer.activeServiceStartedAt ? (Date.now() - volunteer.activeServiceStartedAt) / 3600000 : 0;
+      volunteer.activeServiceHours = serviceInfo.usedHours;
+      volunteer.hoursServed = Number((volunteer.hoursServed + liveHours).toFixed(1));
+      volunteer.activeServiceStartedAt = null;
       volunteer.completedTasks += 1;
       volunteer.peopleAssisted += 1;
       volunteer.responseHistory.unshift(`Completed ${mobilization.severity} assistance · ${mobilization.incidentAddress}`);
@@ -238,12 +269,27 @@ window.ApdaState = {
 
   // [volunteer done] Timeout escalates exactly once through the existing dispatchTeam path.
   checkVolunteerTimeouts() {
+    this.checkVolunteerServiceLimits(); // [volunteer done] Enforce the maximum while a volunteer remains on an active task.
     this.volunteerMobilizations.forEach(mobilization => {
       mobilization.targets.forEach(target => this.checkVolunteerEta(mobilization, target));
       if (Date.now() >= mobilization.expiresAt && !mobilization.groundConfirmedBy && !mobilization.escalated) this.autoEscalateVolunteerMobilization(mobilization.id);
     });
     // [volunteer done] Refresh active volunteer cards so the urgency countdown visibly advances.
     if (this.volunteerMobilizations.some(m => !m.escalated && !m.groundConfirmedBy && Date.now() < m.expiresAt)) this.emitChange();
+  },
+
+  // [volunteer done] Reaching 12 hours makes a volunteer unavailable for new alerts but never cancels an assigned task.
+  checkVolunteerServiceLimits() {
+    let changed = false;
+    this.volunteers.forEach(volunteer => {
+      const serviceInfo = this.getVolunteerServiceInfo(volunteer);
+      if (serviceInfo.reached && volunteer.availability !== 'offline') {
+        volunteer.availability = 'offline';
+        changed = true;
+        if (this.currentUser?.id === volunteer.id) this.notify('MAXIMUM SERVICE LIMIT REACHED — you are now OFFLINE for new tasks.', 'warning');
+      }
+    });
+    if (changed) this.syncVolunteerNetwork();
   },
 
   // [volunteer done] localStorage lock suppresses duplicate automatic dispatch across racing browser tabs.
