@@ -8,6 +8,8 @@ window.ApdaApp = {
     window.ApdaState.init();
     window.ApdaOfflineManager.init();
     window.ApdaSOSModal.init();
+    document.documentElement.lang = window.ApdaI18n.currentLang;
+    window.ApdaI18n.observeDocument();
 
     // Subscribe to reactive state updates
     window.ApdaState.subscribe(() => {
@@ -76,12 +78,13 @@ window.ApdaApp = {
             ${mainContent}
           </main>
         </div>
-
-        ${this.renderFooter()}
       </div>
+      ${window.ApdaEmergencyAssistant.renderWidget()}
     `;
 
     this.observeRevealElements();
+    window.ApdaEmergencyAssistant.initDrag();
+    window.ApdaI18n.translateDocument(appContainer);
   },
 
   observeRevealElements() {
