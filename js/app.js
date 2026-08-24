@@ -3,7 +3,7 @@
 window.ApdaApp = {
   init() {
     console.log('[ApdaSetu] Initializing platform...');
-    
+
     // Initialize core subsystems
     window.ApdaState.init();
     window.ApdaOfflineManager.init();
@@ -24,6 +24,11 @@ window.ApdaApp = {
     // Setup global keyboard listeners
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        // [volunteer done] Escape closes the volunteer dropdown first if currently open
+        if (window.ApdaAuthModal?.volunteerDropdownOpen) {
+          window.ApdaAuthModal.closeVolunteerDropdown();
+          return;
+        }
         window.ApdaSOSModal.close();
         window.ApdaAuthModal.close();
         window.ApdaEmergencyCallModal.close();
@@ -105,7 +110,7 @@ window.ApdaApp = {
     return `
       <footer class="glass-panel border-t border-white/10 py-8 px-4 sm:px-6 lg:px-8 mt-12 text-xs text-slate-400">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
-          
+
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-xl bg-red-600 flex items-center justify-center text-white text-base">
               🛡️

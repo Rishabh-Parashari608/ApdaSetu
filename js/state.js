@@ -262,15 +262,13 @@ window.ApdaState = {
     }
   },
 
-  // [volunteer done] Timeout escalates exactly once through the existing dispatchTeam path.
+  // [volunteer done] Timeout escalates exactly once through the existing dispatchTeam path without triggering unnecessary 1-second global re-renders.
   checkVolunteerTimeouts() {
     this.checkVolunteerServiceLimits(); // [volunteer done] Enforce the maximum while a volunteer remains on an active task.
     this.volunteerMobilizations.forEach(mobilization => {
       mobilization.targets.forEach(target => this.checkVolunteerEta(mobilization, target));
       if (Date.now() >= mobilization.expiresAt && !mobilization.groundConfirmedBy && !mobilization.escalated) this.autoEscalateVolunteerMobilization(mobilization.id);
     });
-    // [volunteer done] Refresh active volunteer cards so the urgency countdown visibly advances.
-    if (this.volunteerMobilizations.some(m => !m.escalated && !m.groundConfirmedBy && Date.now() < m.expiresAt)) this.emitChange();
   },
 
   // [volunteer done] Reaching 12 hours makes a volunteer unavailable for new alerts but never cancels an assigned task.
@@ -395,7 +393,7 @@ window.ApdaState = {
   // Emergency SOS Submission
   addEmergencyRequest(formData) {
     const aiEvaluation = window.ApdaAIEngine.evaluateReport(formData, this.requests);
-    
+
     const newId = 'REQ-2026-' + String(this.requests.length + 1).padStart(3, '0');
     const newRequest = {
       id: newId,
@@ -516,7 +514,7 @@ window.ApdaState = {
       this.currentUser.isSafe = true;
       this.currentUser.safeTimestamp = new Date().toLocaleTimeString();
     }
-    
+
     // Also add to family members
     const myEntry = this.familyMembers.find(f => f.relation === 'Self' || f.name.includes('Priya'));
     if (myEntry) {

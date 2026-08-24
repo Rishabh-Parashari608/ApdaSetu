@@ -36,7 +36,7 @@ window.ApdaResponderDashboard = {
 
     return `
       <div class="min-h-screen pb-20 pt-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
-        
+
         <!-- Command Header & Operations Badge -->
         <div class="glass-panel p-6 rounded-3xl border border-amber-500/30 bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/30 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div class="flex items-center gap-4">
@@ -141,7 +141,7 @@ window.ApdaResponderDashboard = {
 
     return `
       <div class="space-y-4">
-        
+
         <div class="flex items-center justify-between text-xs text-slate-400 px-1">
           <span>Incoming distress reports scored by AI Confidence (Genuineness) and Urgency Risk:</span>
           <span>Showing ${requests.length} incident records</span>
@@ -160,9 +160,9 @@ window.ApdaResponderDashboard = {
 
             return `
               <div class="glass-panel p-6 rounded-3xl border transition-all ${isCritical ? 'border-red-500/50 bg-red-950/15' : 'border-slate-700 bg-slate-900/60'} hover:border-amber-500/40">
-                
+
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-white/10">
-                  
+
                   <div>
                     <div class="flex items-center gap-2 flex-wrap">
                       <span class="font-mono text-sm font-black text-white">${req.id}</span>
@@ -217,10 +217,10 @@ window.ApdaResponderDashboard = {
                 </div>
 
                 <!-- AI Recommendation & Action Buttons -->
-                <!-- [volunteer done] Commander mobilization is embedded into the existing incident flow. -->
+                <!-- [volunteer done] Commander mobilization is embedded into the existing incident flow with stable non-blinking controls. -->
                 <div class="mt-4 p-3 rounded-2xl border ${mobilization?.groundConfirmedBy ? 'border-emerald-500/50 bg-emerald-950/25' : 'border-cyan-500/25 bg-slate-950/50'} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div class="text-xs"><p class="font-black ${mobilization?.groundConfirmedBy ? 'text-emerald-300' : mobilization?.isScramble ? 'text-red-300 animate-pulse' : 'text-cyan-200'}">${mobilization?.groundConfirmedBy ? `✓ GROUND CONFIRMED · ${mobilization.groundConfirmedBy.name} (verified volunteer)` : mobilization?.isScramble ? '🚨 SCRAMBLE ACTIVE' : `🦺 ${eligibleCount} eligible verified volunteer${eligibleCount === 1 ? '' : 's'} within ${rules.radiusKm} km`}</p><p class="text-slate-400 mt-1">${scrambleStats ? `${mobilization.targets.length} notified · ${scrambleStats.accepted || 0} accepted · ${scrambleStats.on_the_way || 0} on the way · ${scrambleStats.on_site || 0} on site · ${scrambleStats.notified || 0} pending` : mobilization ? `Status: ${mobilization.status.replace('_', ' ')} · ${mobilization.targets.filter(t => ['accepted', 'on_the_way', 'on_site'].includes(t.status)).length} responding` : `Response window: ${rules.windowMinutes} minutes`}</p></div>
-                  ${mobilization ? `<span class="px-3 py-2 rounded-xl ${mobilization.isScramble ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'} font-bold text-xs">${mobilization.isScramble ? '🚨 SCRAMBLE ACTIVE' : 'MOBILIZATION ACTIVE'}</span>` : `<button onclick="window.ApdaState.scrambleNearbyVolunteers('${req.id}')" class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs shadow-lg shadow-red-900/40 animate-pulse">🚨 SCRAMBLE VOLUNTEERS</button>`}
+                  <div class="text-xs"><p class="font-black ${mobilization?.groundConfirmedBy ? 'text-emerald-300' : mobilization?.isScramble ? 'text-red-400' : 'text-cyan-200'}">${mobilization?.groundConfirmedBy ? `✓ GROUND CONFIRMED · ${mobilization.groundConfirmedBy.name} (verified volunteer)` : mobilization?.isScramble ? '🚨 SCRAMBLE ACTIVE' : `🦺 ${eligibleCount} eligible verified volunteer${eligibleCount === 1 ? '' : 's'} within ${rules.radiusKm} km`}</p><p class="text-slate-400 mt-1">${scrambleStats ? `${mobilization.targets.length} notified · ${scrambleStats.accepted || 0} accepted · ${scrambleStats.on_the_way || 0} on the way · ${scrambleStats.on_site || 0} on site · ${scrambleStats.notified || 0} pending` : mobilization ? `Status: ${mobilization.status.replace('_', ' ')} · ${mobilization.targets.filter(t => ['accepted', 'on_the_way', 'on_site'].includes(t.status)).length} responding` : `Response window: ${rules.windowMinutes} minutes`}</p></div>
+                  ${mobilization ? `<span class="px-3 py-2 rounded-xl ${mobilization.isScramble ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'} font-bold text-xs">${mobilization.isScramble ? '🚨 SCRAMBLE ACTIVE' : 'MOBILIZATION ACTIVE'}</span>` : `<button onclick="window.ApdaState.scrambleNearbyVolunteers('${req.id}')" class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs shadow-lg shadow-red-900/40">🚨 SCRAMBLE VOLUNTEERS</button>`}
                 </div>
                 ${mobilization?.isScramble ? this.renderScrambleTargetPanel(mobilization) : ''}
                 <div class="mt-5 pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -390,7 +390,7 @@ window.ApdaResponderDashboard = {
 
     return `
       <div class="space-y-6">
-        
+
         <div class="flex items-center justify-between text-xs text-slate-400">
           <span>Active Response Battalions, Medical Ambulances & Civil Defense Squads:</span>
           <span class="text-amber-400 font-bold">5 Registered Units</span>
@@ -402,7 +402,7 @@ window.ApdaResponderDashboard = {
 
             return `
               <div class="glass-panel p-6 rounded-3xl border transition-all ${isDeployed ? 'border-amber-500/50 bg-amber-950/20' : 'border-slate-700 bg-slate-900/60'}">
-                
+
                 <div class="flex items-start justify-between gap-3 pb-3 border-b border-white/10">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-2xl ${isDeployed ? 'bg-amber-600' : 'bg-slate-800'} flex items-center justify-center text-xl text-white">
@@ -461,9 +461,9 @@ window.ApdaResponderDashboard = {
   renderAnalytics() {
     return `
       <div class="space-y-6">
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
+
           <!-- Breakdown by Disaster Category -->
           <div class="glass-panel p-6 rounded-3xl border border-white/10 space-y-4">
             <h3 class="font-extrabold text-sm text-white flex items-center gap-2">
