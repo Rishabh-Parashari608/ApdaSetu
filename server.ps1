@@ -1,5 +1,9 @@
 # Simple PowerShell HTTP Server for ApdaSetu
-$port = 8080
+param(
+    [int]$Port = 8080
+)
+
+$port = $Port
 $path = $PSScriptRoot
 
 $listener = New-Object System.Net.HttpListener
