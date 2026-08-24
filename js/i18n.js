@@ -3,6 +3,7 @@
 window.ApdaI18n = {
   currentLang: localStorage.getItem('apdasetu_lang') || 'en',
   observer: null,
+  googleTranslateReady: false,
   
   languages: [
     { code: 'en', name: 'English', native: 'English' },
@@ -430,12 +431,38 @@ window.ApdaI18n = {
     this.observer.observe(document.body, { childList: true, subtree: true });
   },
 
+  applyFullPageTranslation(code = this.currentLang) {
+    if (code === 'en') {
+      document.cookie = 'googtrans=;path=/;max-age=0';
+      return;
+    }
+    document.cookie = `googtrans=/en/${code};path=/`;
+    const selector = document.querySelector('.goog-te-combo');
+    if (!selector) return;
+    selector.value = code;
+    selector.dispatchEvent(new Event('change'));
+  },
+
+  initGoogleTranslate() {
+    if (!window.google || !window.google.translate || !window.google.translate.TranslateElement) return;
+    new window.google.translate.TranslateElement({
+      pageLanguage: 'en',
+      includedLanguages: 'hi,bn,mr,or,as',
+      autoDisplay: false
+    }, 'google-translate-element');
+    this.googleTranslateReady = true;
+    this.applyFullPageTranslation();
+  },
+
   setLanguage(code) {
     if (this.translations[code]) {
       this.currentLang = code;
       localStorage.setItem('apdasetu_lang', code);
       document.documentElement.lang = code;
       window.dispatchEvent(new CustomEvent('apdasetu_lang_changed', { detail: { lang: code } }));
+      window.setTimeout(() => this.applyFullPageTranslation(code), 0);
     }
   }
 };
+
+window.googleTranslateElementInit = () => window.ApdaI18n.initGoogleTranslate();

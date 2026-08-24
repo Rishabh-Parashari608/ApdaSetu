@@ -44,9 +44,12 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="css/styles.css?v=2.2.0">
+  <link rel="stylesheet" href="css/styles.css?v=2.3.0">
 </head>
 <body class="bg-[#081225] text-slate-100 min-h-screen selection:bg-cyan-400 selection:text-slate-950">
+
+  <!-- Hidden Google Translate mount: the visible language control stays in the ApdaSetu navbar. -->
+  <div id="google-translate-element" class="google-translate-element" aria-hidden="true"></div>
 
   <!-- Toast Notification Container (Fixed Top Right) -->
   <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col items-end pointer-events-none max-w-md w-full px-4"></div>
@@ -57,7 +60,7 @@
   <!-- Core Data & Engines -->
   <script src="js/data/seed-data.js?v=1.6.0"></script>
   <script src="js/data/safety-guides-data.js?v=1.6.0"></script>
-  <script src="js/i18n.js?v=1.8.0"></script>
+  <script src="js/i18n.js?v=1.9.0"></script>
   <script src="js/ai-engine.js?v=1.6.0"></script>
   <script src="js/sound-engine.js?v=1.6.0"></script>
   <script src="js/offline-manager.js?v=1.6.0"></script>
@@ -84,5 +87,6 @@
 
   <!-- App Bootstrap -->
   <script src="js/app.js?v=1.9.0"></script>
+  <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
 </body>
 </html>

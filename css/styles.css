@@ -526,6 +526,13 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 .leaflet-container { border: 1px solid rgba(125, 211, 252, .2); box-shadow: 0 16px 35px rgba(1, 8, 24, .4); }
 ::selection { background: #67e8f9; color: #08203d; }
 
+/* The platform uses its own language selector; keep Google Translate's helper UI invisible. */
+.google-translate-element,
+.goog-te-banner-frame,
+#goog-gt-tt,
+.goog-te-balloon-frame { display: none !important; }
+body { top: 0 !important; }
+
 .text-gradient {
   background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
   -webkit-background-clip: text;
