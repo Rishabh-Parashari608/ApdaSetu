@@ -1,13 +1,13 @@
 // [volunteer done] Auth & Role Selection Modal with unified design system and minimalist volunteer demo dropdown
 window.ApdaAuthModal = {
-  activeTab: 'demo', // [volunteer done] 'demo' | 'citizen' | 'responder' | 'volunteer'
+  activeTab: 'citizen', // 'demo' | 'citizen' | 'responder' | 'volunteer'
   authMode: 'login', // 'login' | 'signup'
   selectedDemoVolunteerId: 'VLT-001', // [volunteer done] Selected identity for the volunteer response demo.
   volunteerDropdownOpen: false, // [volunteer done] Dropdown is closed by default and reveals names only on user interaction.
   outsideClickListenerBound: false, // [volunteer done] Global click handler for outside click dismissal.
 
-  open(defaultTab = 'demo', authMode = 'login') {
-    this.activeTab = defaultTab;
+  open(defaultTab = 'citizen', authMode = 'login') {
+    this.activeTab = ['demo', 'citizen', 'responder', 'volunteer'].includes(defaultTab) ? defaultTab : 'citizen';
     this.authMode = authMode;
     this.volunteerDropdownOpen = false; // [volunteer done] Reset dropdown state on open
     this.close();
@@ -241,18 +241,22 @@ window.ApdaAuthModal = {
   // [volunteer done] Minimalist dropdown renders available verified volunteers only when opened.
   renderVolunteerDropdownMenu() {
     const volunteers = (window.ApdaState.volunteers || []).filter(volunteer => volunteer.verified);
-    const activeMobilization = (window.ApdaState.volunteerMobilizations || []).find(mobilization => mobilization.isScramble && !['resolved', 'escalated'].includes(mobilization.status));
+    const activeMobilization = (window.ApdaState.volunteerMobilizations || []).find(mobilization => mobilization.isScramble && !['resolved', 'escalated'].includes(mobilization.status)); // [volunteer done] Eligibility preview is tied only to an actual active scramble.
     const incident = activeMobilization ? window.ApdaState.requests.find(request => request.id === activeMobilization.requestId) : null;
-    const selectedId = this.selectedDemoVolunteerId;
+    const selectedId = volunteers.some(volunteer => volunteer.id === this.selectedDemoVolunteerId) ? this.selectedDemoVolunteerId : volunteers[0]?.id;
+    this.selectedDemoVolunteerId = selectedId;
 
     return `
       <div id="volunteer-dropdown-menu" class="volunteer-dropdown-menu absolute left-0 right-0 top-full mt-1.5 z-50 bg-slate-900/98 border border-slate-700/90 rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto backdrop-blur-xl">
+        ${incident ? `<div class="px-2.5 py-1.5 bg-red-950/50 border-b border-red-500/30 text-[10px] text-red-100">🚨 ${String(incident.disasterType).toUpperCase()} · ${String(incident.severity).toUpperCase()} · ${activeMobilization.rules.radiusKm} km radius</div>` : `<div class="px-2.5 py-1.5 bg-slate-950/70 border-b border-slate-800 text-[10px] text-slate-400">No active scramble. Eligibility is calculated when Commander starts one.</div>`}
         <div class="p-1.5 space-y-1">
           ${volunteers.map(volunteer => {
             const isSelected = volunteer.id === selectedId;
             const service = window.ApdaState.getVolunteerServiceInfo(volunteer);
             const distance = incident ? window.ApdaState.calculateDistanceKm(volunteer.coordinates, incident.coordinates) : null;
             const isAvailable = volunteer.availability === 'available' && !service.reached;
+            const eligible = distance !== null && distance <= activeMobilization?.rules.radiusKm && window.ApdaState.isVolunteerEligible(volunteer);
+            const eligibilityLabel = !incident ? '' : eligible ? `Eligible · ~${window.ApdaState.estimateVolunteerEta(distance)} min` : service.reached ? 'Service limit' : volunteer.availability !== 'available' ? 'Unavailable' : 'Outside radius';
 
             return `
               <div onclick="window.ApdaAuthModal.selectDemoVolunteer('${volunteer.id}', event)" class="px-2.5 py-2 rounded-lg hover:bg-slate-800/90 cursor-pointer transition-colors flex items-center justify-between gap-2 ${isSelected ? 'bg-emerald-950/40 border border-emerald-500/40' : 'border border-transparent'}">
@@ -263,6 +267,7 @@ window.ApdaAuthModal = {
                     <span class="px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-bold">✓</span>
                   </div>
                   <p class="text-[10px] text-slate-400 truncate mt-0.5">${volunteer.skills.slice(0, 2).join(' · ')} ${distance !== null ? `• 📍 ${distance.toFixed(1)}km (~${window.ApdaState.estimateVolunteerEta(distance)}m)` : ''}</p>
+                  ${eligibilityLabel ? `<p class="text-[10px] font-bold mt-0.5 ${eligible ? 'text-emerald-300' : 'text-red-300'}">${eligibilityLabel}</p>` : ''}
                 </div>
                 <div class="flex items-center gap-1.5 flex-shrink-0">
                   <span class="text-[10px] font-bold ${isAvailable ? 'text-emerald-400' : 'text-slate-500'}">
@@ -278,20 +283,26 @@ window.ApdaAuthModal = {
     `;
   },
 
+  // [volunteer done] Direct card login remains available for multi-tab presenter testing.
+  loginAsVolunteer(volunteerId) {
+    this.selectedDemoVolunteerId = volunteerId;
+    this.loginDemo('volunteer');
+  },
+
   renderCitizenTab() {
     return `
       <form onsubmit="window.ApdaAuthModal.handleCustomLogin(event, 'citizen')" class="space-y-3.5">
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">Full Name</label>
-          <input type="text" id="citizen-name" required placeholder="e.g. Rahul Das" value="Rahul Das" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+          <input type="text" id="citizen-name" required autocomplete="name" placeholder="Enter your full name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-300 mb-1">Mobile Number (with OTP stub)</label>
-          <input type="tel" id="citizen-phone" required placeholder="+91 98765 43210" value="+91 98765 12345" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+          <label class="block text-xs font-bold text-slate-300 mb-1">Mobile Number</label>
+          <input type="tel" id="citizen-phone" required autocomplete="tel" placeholder="+91 98765 43210" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">Current Disaster Zone / City</label>
-          <input type="text" id="citizen-city" placeholder="e.g. Guwahati, Assam" value="Guwahati, Assam" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+          <input type="text" id="citizen-city" autocomplete="address-level2" placeholder="e.g. Guwahati, Assam" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
         </div>
         <button type="submit" class="w-full py-3 bg-red-600 hover:bg-red-500 font-bold rounded-xl text-white text-sm shadow-lg shadow-red-600/30 transition-all mt-2">
           ${this.authMode === 'signup' ? 'Create Citizen Account →' : 'Continue as Citizen →'}
@@ -305,7 +316,7 @@ window.ApdaAuthModal = {
       <form onsubmit="window.ApdaAuthModal.handleCustomLogin(event, 'responder')" class="space-y-3.5">
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">Responder Officer Name</label>
-          <input type="text" id="responder-name" required placeholder="Officer Name" value="Commander V. Nair" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          <input type="text" id="responder-name" required autocomplete="name" placeholder="Enter officer name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">Organization / Agency</label>
@@ -320,7 +331,7 @@ window.ApdaAuthModal = {
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">Official ID / Badge #</label>
-          <input type="text" id="responder-badge" placeholder="e.g. NDRF-HQ-492" value="NDRF-HQ-492" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          <input type="text" id="responder-badge" autocomplete="off" placeholder="e.g. NDRF-HQ-492" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
         </div>
         <button type="submit" class="w-full py-3 bg-amber-600 hover:bg-amber-500 font-bold rounded-xl text-white text-sm shadow-lg shadow-amber-600/30 transition-all mt-2">
           ${this.authMode === 'signup' ? 'Create Responder Account →' : 'Open Command Dashboard →'}
