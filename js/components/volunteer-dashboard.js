@@ -12,7 +12,8 @@ window.ApdaVolunteerDashboard = {
     const volunteer = window.ApdaState.volunteers.find(v => v.id === user.id) || window.ApdaState.volunteers[0];
     if (!volunteer) return '<div class="p-8 text-slate-300">Volunteer profile unavailable.</div>';
     const tasks = window.ApdaState.volunteerMobilizations.filter(m => m.targets.some(t => t.volunteerId === volunteer.id));
-    const activeTasks = tasks.filter(m => m.targets.find(t => t.volunteerId === volunteer.id).status !== 'completed' && m.targets.find(t => t.volunteerId === volunteer.id).status !== 'declined');
+    const activeTasks = tasks.filter(m => !['completed', 'declined', 'resolved'].includes(m.targets.find(t => t.volunteerId === volunteer.id).status));
+    const resolvedScramble = tasks.find(m => m.isScramble && m.status === 'resolved'); // [volunteer done] Preserve a clear Command Center closure message after the alert disappears.
     return `
       <div class="min-h-screen pb-20 pt-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
         <section class="glass-panel p-6 rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/30 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -25,11 +26,12 @@ window.ApdaVolunteerDashboard = {
             <button onclick="window.ApdaState.setVolunteerAvailability('${volunteer.id}', 'offline')" class="px-4 py-2 rounded-xl text-xs font-black ${volunteer.availability === 'offline' ? 'bg-slate-700 text-white' : 'text-slate-400'}">OFFLINE</button>
           </div>
         </section>
+        ${resolvedScramble ? `<section class="rounded-2xl p-4 border border-emerald-500/40 bg-emerald-950/25"><p class="font-black text-emerald-300">🟢 SCRAMBLE RESOLVED</p><p class="text-xs text-slate-300 mt-1">This emergency request has been closed by Command Center. You are back to your normal available state.</p></section>` : ''}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
           ${[[activeTasks.length, 'Active emergency alerts', 'text-red-400'], [volunteer.completedTasks, 'Completed tasks', 'text-emerald-400'], [volunteer.peopleAssisted, 'People assisted', 'text-sky-400'], [volunteer.hoursServed, 'Hours served', 'text-amber-400']].map(([value, label, color]) => `<div class="glass-panel rounded-2xl p-4 border border-white/10"><div class="text-2xl font-black ${color}">${value}</div><p class="text-xs text-slate-400 mt-1">${label}</p></div>`).join('')}
         </div>
         <div class="grid lg:grid-cols-3 gap-5">
-          <section class="lg:col-span-2 space-y-4"><div class="flex justify-between items-center"><h2 class="font-black text-white">Emergency requests</h2><span class="text-xs text-slate-400">Live synchronized across command tabs</span></div>${tasks.length ? tasks.map(m => this.renderTask(m, volunteer)).join('') : `<div class="glass-panel rounded-3xl p-8 border border-white/10 text-center"><div class="text-4xl">🛡️</div><h3 class="font-bold text-white mt-3">Standing by for nearby requests</h3><p class="text-xs text-slate-400 mt-1">Only available, verified volunteers receive mobilization alerts.</p></div>`}</section>
+          <section class="lg:col-span-2 space-y-4"><div class="flex justify-between items-center"><h2 class="font-black text-white">Emergency requests</h2><span class="text-xs text-slate-400">Live synchronized across command tabs</span></div>${activeTasks.length ? activeTasks.map(m => this.renderTask(m, volunteer)).join('') : `<div class="glass-panel rounded-3xl p-8 border border-white/10 text-center"><div class="text-4xl">🛡️</div><h3 class="font-bold text-white mt-3">Standing by for nearby requests</h3><p class="text-xs text-slate-400 mt-1">Only available, verified volunteers receive mobilization alerts.</p></div>`}</section>
           <aside class="glass-panel rounded-3xl p-5 border border-white/10"><h2 class="font-black text-white">Response history</h2><div class="mt-4 space-y-3">${volunteer.responseHistory.map(item => `<div class="border-l-2 border-emerald-500/60 pl-3 text-xs text-slate-300">${item}</div>`).join('')}</div><div class="mt-5 pt-4 border-t border-white/10"><p class="text-[10px] font-bold text-slate-500 uppercase">Response skills</p><div class="flex flex-wrap gap-1.5 mt-2">${volunteer.skills.map(skill => `<span class="px-2 py-1 rounded-lg bg-slate-800 text-xs text-slate-200">${skill}</span>`).join('')}</div></div></aside>
         </div>
       </div>`;

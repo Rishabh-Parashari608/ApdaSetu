@@ -142,7 +142,7 @@ window.ApdaState = {
       this.notify('Volunteer mobilization needs a valid incident location.', 'warning');
       return;
     }
-    const existing = this.volunteerMobilizations.find(m => m.requestId === requestId && !['completed', 'escalated'].includes(m.status));
+    const existing = this.volunteerMobilizations.find(m => m.requestId === requestId && !['completed', 'escalated', 'resolved'].includes(m.status)); // [volunteer done] A resolved scramble can be safely restarted for the demo.
     if (existing) {
       this.notify(`Volunteer mobilization is already active for ${requestId}.`, 'info');
       return;
@@ -165,6 +165,26 @@ window.ApdaState = {
   // [volunteer done] Scramble reuses the matching, sync, countdown, and escalation pipeline.
   scrambleNearbyVolunteers(requestId) {
     this.mobilizeNearbyVolunteers(requestId, { scramble: true });
+  },
+
+  // [volunteer done] Commander can close one scramble without affecting volunteers or any unrelated incident.
+  resolveVolunteerScramble(mobilizationId) {
+    const mobilization = this.volunteerMobilizations.find(item => item.id === mobilizationId && item.isScramble);
+    if (!mobilization || mobilization.status === 'resolved') return;
+    mobilization.targets.forEach(target => {
+      if (!['completed', 'declined'].includes(target.status)) target.status = 'resolved';
+    });
+    mobilization.status = 'resolved';
+    mobilization.resolvedAt = Date.now();
+    const request = this.requests.find(item => item.id === mobilization.requestId);
+    if (request) {
+      request.timeline.unshift({ time: 'Just now', status: 'Scramble Resolved', note: 'Command Center closed the volunteer scramble. No professional unit was dispatched.' });
+      this.saveRequests();
+    }
+    if (this.currentUser && mobilization.targets.some(target => target.volunteerId === this.currentUser.id)) window.ApdaSoundEngine?.stopEmergencySiren();
+    this.syncVolunteerNetwork();
+    this.notify(`SCRAMBLE RESOLVED for ${mobilization.requestId}.`, 'success');
+    this.emitChange();
   },
 
   // [volunteer done] Volunteer availability controls whether the person can receive future alerts.
