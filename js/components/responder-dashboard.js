@@ -151,6 +151,12 @@ window.ApdaResponderDashboard = {
           ${requests.map(req => {
             const isCritical = req.aiScore.riskScore >= 80;
             const isDispatched = req.status === 'Dispatched';
+            // [volunteer done] Surface the linked verified-volunteer response in the existing triage card.
+            const mobilization = window.ApdaState.volunteerMobilizations.find(m => m.requestId === req.id && !['completed', 'escalated', 'resolved'].includes(m.status));
+            const rules = window.ApdaState.getVolunteerRules(req.severity);
+            const eligibleCount = req.coordinates ? window.ApdaState.volunteers.filter(v => window.ApdaState.isVolunteerEligible(v) && window.ApdaState.calculateDistanceKm(v.coordinates, req.coordinates) !== null && window.ApdaState.calculateDistanceKm(v.coordinates, req.coordinates) <= rules.radiusKm).length : 0; // [volunteer done] Service-limited profiles are never counted as new-task candidates.
+            // [volunteer done] Live scramble totals are derived from synchronized per-volunteer task states.
+            const scrambleStats = mobilization?.isScramble ? mobilization.targets.reduce((stats, target) => { stats[target.status] = (stats[target.status] || 0) + 1; return stats; }, {}) : null;
 
             return `
               <div class="glass-panel p-6 rounded-3xl border transition-all ${isCritical ? 'border-red-500/50 bg-red-950/15' : 'border-slate-700 bg-slate-900/60'} hover:border-amber-500/40">
@@ -211,6 +217,12 @@ window.ApdaResponderDashboard = {
                 </div>
 
                 <!-- AI Recommendation & Action Buttons -->
+                <!-- [volunteer done] Commander mobilization is embedded into the existing incident flow. -->
+                <div class="mt-4 p-3 rounded-2xl border ${mobilization?.groundConfirmedBy ? 'border-emerald-500/50 bg-emerald-950/25' : 'border-cyan-500/25 bg-slate-950/50'} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div class="text-xs"><p class="font-black ${mobilization?.groundConfirmedBy ? 'text-emerald-300' : mobilization?.isScramble ? 'text-red-300 animate-pulse' : 'text-cyan-200'}">${mobilization?.groundConfirmedBy ? `✓ GROUND CONFIRMED · ${mobilization.groundConfirmedBy.name} (verified volunteer)` : mobilization?.isScramble ? '🚨 SCRAMBLE ACTIVE' : `🦺 ${eligibleCount} eligible verified volunteer${eligibleCount === 1 ? '' : 's'} within ${rules.radiusKm} km`}</p><p class="text-slate-400 mt-1">${scrambleStats ? `${mobilization.targets.length} notified · ${scrambleStats.accepted || 0} accepted · ${scrambleStats.on_the_way || 0} on the way · ${scrambleStats.on_site || 0} on site · ${scrambleStats.notified || 0} pending` : mobilization ? `Status: ${mobilization.status.replace('_', ' ')} · ${mobilization.targets.filter(t => ['accepted', 'on_the_way', 'on_site'].includes(t.status)).length} responding` : `Response window: ${rules.windowMinutes} minutes`}</p></div>
+                  ${mobilization ? `<span class="px-3 py-2 rounded-xl ${mobilization.isScramble ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300'} font-bold text-xs">${mobilization.isScramble ? '🚨 SCRAMBLE ACTIVE' : 'MOBILIZATION ACTIVE'}</span>` : `<button onclick="window.ApdaState.scrambleNearbyVolunteers('${req.id}')" class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs shadow-lg shadow-red-900/40 animate-pulse">🚨 SCRAMBLE VOLUNTEERS</button>`}
+                </div>
+                ${mobilization?.isScramble ? this.renderScrambleTargetPanel(mobilization) : ''}
                 <div class="mt-5 pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div class="text-xs text-amber-300 font-semibold flex items-center gap-1.5">
                     <span>🤖 Suggested:</span>
@@ -252,6 +264,12 @@ window.ApdaResponderDashboard = {
 
       </div>
     `;
+  },
+
+  // [volunteer done] Command sees the actual matching result and every synchronized volunteer task state.
+  renderScrambleTargetPanel(mobilization) {
+    const statusLabels = { notified: 'NOTIFIED', accepted: 'ACCEPTED', on_the_way: 'ON THE WAY', on_site: 'ON SITE', completed: 'COMPLETED', declined: 'DECLINED', resolved: 'RESOLVED' };
+    return `<section class="mt-4 rounded-2xl border border-red-500/40 bg-slate-950/60 overflow-hidden"><div class="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-red-500/25"><div><h4 class="text-sm font-black text-red-300">🚨 SCRAMBLE ACTIVE</h4><p class="text-xs text-slate-400 mt-1">Incident: ${mobilization.disasterType || 'Emergency'} · ${String(mobilization.severity).toUpperCase()} · ${mobilization.rules.radiusKm} km radius · ${mobilization.rules.windowMinutes} min window</p></div><button onclick="window.ApdaState.resolveVolunteerScramble('${mobilization.id}')" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-950/40">🟢 DE-SCRAMBLE / RESOLVE</button></div><div class="p-4"><p class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Targeted volunteers · ${mobilization.targets.length}</p><div class="space-y-2">${mobilization.targets.length ? mobilization.targets.map(target => { const volunteer = window.ApdaState.volunteers.find(item => item.id === target.volunteerId); const service = volunteer ? window.ApdaState.getVolunteerServiceInfo(volunteer) : null; return `<div class="p-3 rounded-xl bg-slate-900/80 border border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"><div><p class="text-xs font-black text-white">🦺 ${volunteer?.name || 'Verified Volunteer'} <span class="ml-1 text-[10px] text-emerald-300">✓ VERIFIED</span></p><p class="text-[10px] text-slate-400 mt-1">📍 ${target.distanceKm} km · ⏱️ ~${target.etaMinutes} min ETA · <span class="${service?.reached ? 'text-red-300' : service?.warning ? 'text-amber-300' : 'text-emerald-300'}">${service?.reached ? 'SERVICE LIMIT REACHED' : `${service?.usedHours.toFixed(1) || '0.0'} / 12h`}</span></p></div><span class="w-fit px-2.5 py-1 rounded-lg text-[10px] font-black ${target.status === 'on_site' ? 'bg-emerald-500/20 text-emerald-300' : target.status === 'declined' ? 'bg-slate-700 text-slate-300' : 'bg-red-500/15 text-red-200'}">${statusLabels[target.status] || String(target.status).toUpperCase()}</span></div>`; }).join('') : '<p class="text-xs text-slate-400">No verified available volunteers were inside the response radius.</p>'}</div></div></section>`;
   },
 
   // 2. Live Operations Map (Command View)

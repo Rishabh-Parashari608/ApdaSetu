@@ -44,6 +44,10 @@ window.ApdaApp = {
     if (window.ApdaState.currentView === 'responder' && (!window.ApdaState.currentUser || window.ApdaState.currentUser.role !== 'responder')) {
       window.ApdaState.currentView = 'home';
     }
+    // [volunteer done] Prevent non-volunteer roles from rendering the protected volunteer dashboard.
+    if (window.ApdaState.currentView === 'volunteer' && (!window.ApdaState.currentUser || window.ApdaState.currentUser.role !== 'volunteer')) {
+      window.ApdaState.currentView = 'home';
+    }
 
     const currentView = window.ApdaState.currentView;
     let mainContent = '';
@@ -53,6 +57,8 @@ window.ApdaApp = {
       mainContent = window.ApdaCitizenDashboard.render();
     } else if (currentView === 'responder') {
       mainContent = window.ApdaResponderDashboard.render();
+    } else if (currentView === 'volunteer') { // [volunteer done] Dedicated third dashboard route
+      mainContent = window.ApdaVolunteerDashboard.render();
     } else {
       mainContent = window.ApdaHomepage.render();
     }

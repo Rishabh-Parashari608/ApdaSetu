@@ -17,18 +17,22 @@ window.ApdaSoundEngine = {
   },
 
   // Play Disaster Warning Siren
-  startEmergencySiren() {
+  // [volunteer done] Persistent option supports a scramble alert without replacing the shared Web Audio siren.
+  startEmergencySiren(options = {}) {
     if (this.soundMuted) return;
     try {
       this.initAudio();
-      if (!this.audioCtx) return;
+      if (!this.audioCtx) return false;
       if (this.audioCtx.state === 'suspended') {
-        this.audioCtx.resume();
+        this.audioCtx.resume().catch(() => {
+          // [volunteer done] Browsers may reject autoplay; the visual scramble remains actionable.
+          this.stopEmergencySiren();
+          window.dispatchEvent(new CustomEvent('apdasetu_siren_state', { detail: { isPlaying: false, needsGesture: true } }));
+        });
       }
 
       if (this.isSirenPlaying) {
-        this.stopEmergencySiren();
-        return;
+        return true;
       }
 
       const osc = this.audioCtx.createOscillator();
@@ -56,15 +60,29 @@ window.ApdaSoundEngine = {
 
       window.dispatchEvent(new CustomEvent('apdasetu_siren_state', { detail: { isPlaying: true } }));
 
-      // Automatically auto-stop after 12 seconds to prevent audio fatigue
-      setTimeout(() => {
-        if (this.isSirenPlaying) {
-          this.stopEmergencySiren();
-        }
-      }, 12000);
+      // [volunteer done] Scramble sirens pulse continuously until a volunteer acts, mutes, or the request expires.
+      if (!options.persistent) {
+        setTimeout(() => {
+          if (this.isSirenPlaying) this.stopEmergencySiren();
+        }, 12000);
+      }
+      return true;
     } catch (e) {
       console.warn('Audio context init warning:', e);
+      return false;
     }
+  },
+
+  // [volunteer done] Reuse the existing oscillator for the volunteer scramble rather than loading an audio library.
+  startVolunteerScrambleSiren() {
+    return this.startEmergencySiren({ persistent: true });
+  },
+
+  // [volunteer done] A user gesture can unlock sound if browser autoplay policy blocked the initial alert.
+  enableEmergencyAudio() {
+    this.initAudio();
+    if (!this.audioCtx) return Promise.resolve(false);
+    return this.audioCtx.resume().then(() => this.startVolunteerScrambleSiren()).catch(() => false);
   },
 
   stopEmergencySiren() {

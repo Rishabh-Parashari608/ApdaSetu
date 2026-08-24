@@ -1,8 +1,9 @@
 // Auth & Role Selection Modal with 1-Click Quick Demo Presets
 
 window.ApdaAuthModal = {
-  activeTab: 'demo', // 'demo' | 'citizen' | 'responder'
+  activeTab: 'demo', // [volunteer done] 'demo' | 'citizen' | 'responder' | 'volunteer'
   authMode: 'login', // 'login' | 'signup'
+  selectedDemoVolunteerId: 'VLT-001', // [volunteer done] Presenter-selected identity for the volunteer response demo.
 
   open(defaultTab = 'demo', authMode = 'login') {
     this.activeTab = defaultTab;
@@ -65,6 +66,10 @@ window.ApdaAuthModal = {
           <button onclick="window.ApdaAuthModal.switchTab('responder')" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all ${this.activeTab === 'responder' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">
             🚒 Responder
           </button>
+          <!-- [volunteer done] Third authentication role -->
+          <button onclick="window.ApdaAuthModal.switchTab('volunteer')" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all ${this.activeTab === 'volunteer' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">
+            🦺 Volunteer
+          </button>
         </div>
 
         <!-- Tab Body -->
@@ -72,6 +77,7 @@ window.ApdaAuthModal = {
           ${this.activeTab === 'demo' ? this.renderDemoTab() : ''}
           ${this.activeTab === 'citizen' ? this.renderCitizenTab() : ''}
           ${this.activeTab === 'responder' ? this.renderResponderTab() : ''}
+          ${this.activeTab === 'volunteer' ? this.renderVolunteerTab() : ''}
         </div>
       </div>
     `;
@@ -100,6 +106,9 @@ window.ApdaAuthModal = {
           </div>
           <span class="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-600 text-white group-hover:bg-red-500">Login →</span>
         </button>
+
+        <!-- [volunteer done] All verified demo identities are visible before entering the volunteer dashboard. -->
+        ${this.renderVolunteerDemoSelector()}
 
         <!-- NDRF Commander Preset -->
         <button onclick="window.ApdaAuthModal.loginDemo('ndrf')" class="w-full p-4 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-amber-500/40 hover:border-amber-500 transition-all flex items-center justify-between text-left group">
@@ -189,6 +198,34 @@ window.ApdaAuthModal = {
     `;
   },
 
+  // [volunteer done] Clear selector shows seeded skills, verification, availability, and proximity to the live demo incident.
+  renderVolunteerDemoSelector(compact = false) {
+    const volunteers = (window.ApdaState.volunteers || []).filter(volunteer => volunteer.verified);
+    const activeMobilization = (window.ApdaState.volunteerMobilizations || []).find(mobilization => mobilization.isScramble && !['resolved', 'escalated'].includes(mobilization.status)); // [volunteer done] Eligibility preview is tied only to an actual active scramble.
+    const incident = activeMobilization ? window.ApdaState.requests.find(request => request.id === activeMobilization.requestId) : null;
+    const selectedId = volunteers.some(volunteer => volunteer.id === this.selectedDemoVolunteerId) ? this.selectedDemoVolunteerId : volunteers[0]?.id;
+    this.selectedDemoVolunteerId = selectedId;
+    return `<section class="rounded-2xl p-3 bg-emerald-950/20 border border-emerald-500/35 ${compact ? '' : 'my-1'}"><div class="flex items-center justify-between gap-3 mb-2"><div><h4 class="text-xs font-black text-emerald-200">🦺 VOLUNTEER DEMO SELECTOR</h4><p class="text-[10px] text-slate-400">Choose a verified identity for this dashboard session</p></div><span class="text-[10px] text-emerald-300 font-bold">${volunteers.length} VERIFIED</span></div>${incident ? `<div class="mb-2 p-2 rounded-lg bg-red-950/40 border border-red-500/30 text-[10px] text-red-100">🚨 Active incident: <strong>${String(incident.disasterType).toUpperCase()} · ${String(incident.severity).toUpperCase()}</strong> · ${activeMobilization.rules.radiusKm} km radius</div>` : '<div class="mb-2 p-2 rounded-lg bg-slate-900/70 border border-slate-700 text-[10px] text-slate-400">No active incident. Volunteer eligibility will be calculated when Commander starts a scramble.</div>'}<div class="max-h-72 overflow-y-auto pr-1 space-y-2">${volunteers.map(volunteer => { const distance = incident ? window.ApdaState.calculateDistanceKm(volunteer.coordinates, incident.coordinates) : null; const service = window.ApdaState.getVolunteerServiceInfo(volunteer); const eligible = distance !== null && distance <= activeMobilization?.rules.radiusKm && window.ApdaState.isVolunteerEligible(volunteer); const eligibilityLabel = !incident ? '' : eligible ? `🟢 ELIGIBLE FOR ${String(incident.severity).toUpperCase()} SCRAMBLE · ~${window.ApdaState.estimateVolunteerEta(distance)} min ETA` : service.reached ? '🔴 SERVICE LIMIT REACHED' : volunteer.availability !== 'available' ? '🔴 UNAVAILABLE' : '🔴 OUTSIDE RESPONSE RADIUS'; const isSelected = volunteer.id === selectedId; return `<div class="p-3 rounded-xl border transition-all ${isSelected ? 'bg-emerald-600/20 border-emerald-400 shadow-md shadow-emerald-950/40' : 'bg-slate-900/70 border-slate-700'}"><div class="flex items-start justify-between gap-2"><div><div class="flex items-center gap-1.5"><span class="font-bold text-sm text-white">🦺 ${volunteer.name}</span><span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-black">✓ VERIFIED</span></div><p class="text-[10px] text-slate-400 mt-1">${volunteer.skills.join(' · ')}</p></div><span class="text-[10px] font-black ${volunteer.availability === 'available' && !service.reached ? 'text-emerald-300' : 'text-slate-400'}">${volunteer.availability === 'available' && !service.reached ? '● AVAILABLE' : '● OFFLINE'}</span></div><p class="text-[10px] ${incident ? 'text-cyan-300' : 'text-slate-500'} mt-2">${distance !== null ? `📍 ${distance.toFixed(1)} km from current incident` : 'Demo location ready'}</p>${eligibilityLabel ? `<p class="text-[10px] font-bold mt-1 ${eligible ? 'text-emerald-300' : 'text-red-300'}">${eligibilityLabel}</p>` : ''}<div class="mt-2 flex gap-2"><button type="button" onclick="window.ApdaAuthModal.selectDemoVolunteer('${volunteer.id}')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200">${isSelected ? 'SELECTED' : 'SELECT'}</button><button type="button" onclick="window.ApdaAuthModal.loginAsVolunteer('${volunteer.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-black text-white">LOGIN AS THIS VOLUNTEER</button></div></div>`; }).join('')}</div></section>`;
+  },
+
+  // [volunteer done] Keep selection in the modal only; response-network availability is never changed here.
+  selectDemoVolunteer(volunteerId) {
+    this.selectedDemoVolunteerId = volunteerId;
+    const modal = document.getElementById('auth-modal-backdrop');
+    if (modal) modal.innerHTML = this.renderContent();
+  },
+
+  // [volunteer done] Direct card login makes multi-tab presenter testing deterministic.
+  loginAsVolunteer(volunteerId) {
+    this.selectedDemoVolunteerId = volunteerId;
+    this.loginDemo('volunteer');
+  },
+
+  // [volunteer done] The role-specific login also uses the same seeded identity selector.
+  renderVolunteerTab() {
+    return `<div class="space-y-3.5">${this.renderVolunteerDemoSelector(true)}<p class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-200">✓ Demo profiles are verified. Only volunteers marked available receive new emergency requests.</p></div>`;
+  },
+
   loginDemo(preset) {
     let user;
     if (preset === 'citizen') {
@@ -212,6 +249,9 @@ window.ApdaAuthModal = {
         badge: 'NDRF-8842',
         agencyType: 'NDRF'
       };
+    } else if (preset === 'volunteer') { // [volunteer done] Use the identity selected by the presenter.
+      const volunteer = window.ApdaState.volunteers.find(v => v.id === this.selectedDemoVolunteerId) || window.ApdaState.volunteers.find(v => v.verified);
+      user = { ...volunteer, role: 'volunteer', city: 'Hatigaon, Guwahati' };
     } else {
       user = {
         id: 'RESP-MED-01',
@@ -238,6 +278,9 @@ window.ApdaAuthModal = {
         phone: document.getElementById('citizen-phone').value || '+91 98765 00000',
         city: document.getElementById('citizen-city').value || 'Disaster Zone'
       };
+    } else if (role === 'volunteer') { // [volunteer done] Kept for compatibility with any existing volunteer login calls.
+      const volunteer = window.ApdaState.volunteers.find(v => v.id === this.selectedDemoVolunteerId) || window.ApdaState.volunteers.find(v => v.verified);
+      user = { ...volunteer, role: 'volunteer' };
     } else {
       user = {
         id: 'RESP-' + Math.floor(Math.random() * 10000),
