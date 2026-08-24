@@ -247,3 +247,155 @@ window.ApdaHomepage = {
     `;
   }
 };
+
+window.ApdaEmergencyAssistant = {
+  isOpen: false,
+  position: null,
+  messages: [{ role: 'assistant', text: 'Hello. I can help you understand local risk status, evacuation steps, nearby shelters, and medical support.', source: 'Safety guidance' }],
+
+  renderWidget() {
+    return `
+      <aside id="emergency-ai-widget" class="emergency-ai-widget ${this.isOpen ? 'is-open' : ''}" aria-label="Emergency AI Assistant">
+        <section id="emergency-ai-panel" class="emergency-assistant emergency-ai-panel" style="${this.position ? `left:${this.position.left}px;top:${this.position.top}px;right:auto;bottom:auto;` : ''}" aria-hidden="${!this.isOpen}">
+          <div id="emergency-ai-drag-handle" class="emergency-assistant__header emergency-ai-panel__header">
+            <div class="flex min-w-0 items-center gap-3">
+              <div class="emergency-assistant__bot-icon" aria-hidden="true">&#129302;</div>
+              <div class="min-w-0">
+                <h2 class="truncate text-sm font-extrabold tracking-wide text-white">Emergency AI Assistant</h2>
+                <p class="mt-0.5 truncate text-[10px] text-amber-100/70">Safety guidance &amp; emergency resources</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="emergency-ai-status"><i></i> Ready</span>
+              <button type="button" onclick="window.ApdaEmergencyAssistant.close()" class="emergency-ai-cancel" aria-label="Close emergency assistant" title="Close assistant">&#215;</button>
+            </div>
+          </div>
+          <div id="emergency-ai-history" class="emergency-assistant__messages chat-scroll space-y-3 px-4 py-4" aria-live="polite">
+            ${this.messages.map(message => this.renderMessage(message.role, message.text, message.source)).join('')}
+          </div>
+          <div class="emergency-ai-panel__footer">
+            <div class="mb-2 flex flex-wrap gap-1.5" aria-label="Suggested questions">
+              <button type="button" onclick="window.ApdaEmergencyAssistant.askSuggestion('Where is the nearest shelter?')" class="emergency-assistant__suggestion">Nearest shelter</button>
+              <button type="button" onclick="window.ApdaEmergencyAssistant.askSuggestion('What should I do during a flood?')" class="emergency-assistant__suggestion">Flood safety</button>
+              <button type="button" onclick="window.ApdaEmergencyAssistant.askSuggestion('Where is the nearest hospital?')" class="emergency-assistant__suggestion">Medical support</button>
+            </div>
+            <form onsubmit="window.ApdaEmergencyAssistant.handleSubmit(event)" class="flex items-center gap-2">
+              <label class="sr-only" for="emergency-ai-input">Ask the emergency AI assistant</label>
+              <input id="emergency-ai-input" type="text" required maxlength="500" autocomplete="off" placeholder="Ask about safety, shelters, or medical help..." class="min-w-0 flex-1 rounded-xl border px-3 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none">
+              <button type="submit" class="emergency-assistant__send shrink-0 rounded-xl px-3.5 py-2.5 text-xs font-extrabold text-slate-950 transition-all">Send <span aria-hidden="true">&#8594;</span></button>
+            </form>
+            <p class="mt-2 text-[9px] leading-relaxed text-amber-50/55">Immediate danger? Call <a class="font-extrabold text-amber-300 hover:text-amber-100" href="tel:112">112</a>. AI guidance does not replace official instructions.</p>
+          </div>
+        </section>
+        <button type="button" onclick="window.ApdaEmergencyAssistant.toggle()" class="emergency-ai-launcher" aria-expanded="${this.isOpen}" aria-controls="emergency-ai-panel">
+          <span class="emergency-ai-launcher__icon" aria-hidden="true">&#129302;</span>
+          <span>Emergency AI</span>
+          <i aria-hidden="true"></i>
+        </button>
+      </aside>
+    `;
+  },
+
+  toggle() { this.isOpen = !this.isOpen; window.ApdaApp.render(); },
+  close() { this.isOpen = false; window.ApdaApp.render(); },
+
+  renderMessage(role, text, source) {
+    const isUser = role === 'user';
+    return `
+      <div class="emergency-assistant__message ${isUser ? 'emergency-assistant__message--user' : 'emergency-assistant__message--bot'}">
+        <p>${this.escapeHtml(text)}</p>
+        ${source ? `<span>${this.escapeHtml(source)}</span>` : ''}
+      </div>
+    `;
+  },
+
+  escapeHtml(value) {
+    const element = document.createElement('div');
+    element.textContent = String(value || '');
+    return element.innerHTML;
+  },
+
+  appendMessage(role, text, source) {
+    this.messages.push({ role, text, source });
+    const history = document.getElementById('emergency-ai-history');
+    if (!history) return;
+    history.insertAdjacentHTML('beforeend', this.renderMessage(role, text, source));
+    history.scrollTop = history.scrollHeight;
+  },
+
+  fallbackResponse(query) {
+    if (/shelter|safe area/i.test(query)) return 'Open the Shelter Map from the citizen dashboard for live locations and vacancies. If travel is unsafe, call 112 for evacuation guidance.';
+    if (/flood|water/i.test(query)) return 'Move to higher ground, avoid flooded roads and drains, switch off electricity if it is safe to do so, and follow district authority alerts.';
+    if (/hospital|medical|doctor|injur/i.test(query)) return 'For urgent medical care, call 108. Keep the person warm and safe, avoid moving anyone with a suspected spine injury, and share your location with responders.';
+    return 'Please follow verified instructions from local emergency managers. For immediate danger, call 112 or submit an SOS report through ApdaSetu.';
+  },
+
+  async ask(query) {
+    const cleanQuery = String(query || '').trim();
+    if (!cleanQuery) return;
+    this.appendMessage('user', cleanQuery);
+    const history = document.getElementById('emergency-ai-history');
+    if (!history) return;
+    const loading = document.createElement('div');
+    loading.className = 'emergency-assistant__message emergency-assistant__message--bot emergency-assistant__typing';
+    loading.textContent = 'Checking safety guidance…';
+    history.appendChild(loading);
+    history.scrollTop = history.scrollHeight;
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: cleanQuery })
+      });
+      if (!response.ok) throw new Error('Chat service unavailable');
+      const data = await response.json();
+      loading.remove();
+      this.appendMessage('assistant', data.response || this.fallbackResponse(cleanQuery), data.source || 'Emergency knowledge base');
+    } catch (error) {
+      loading.remove();
+      this.appendMessage('assistant', this.fallbackResponse(cleanQuery), 'Offline safety guidance');
+    }
+  },
+
+  handleSubmit(event) {
+    event.preventDefault();
+    const input = document.getElementById('emergency-ai-input');
+    if (!input) return;
+    const query = input.value.trim();
+    if (!query) return;
+    input.value = '';
+    this.ask(query);
+  },
+
+  askSuggestion(query) {
+    this.ask(query);
+  },
+
+  initDrag() {
+    const panel = document.getElementById('emergency-ai-panel');
+    const handle = document.getElementById('emergency-ai-drag-handle');
+    if (!panel || !handle) return;
+    let startX; let startY; let originLeft; let originTop;
+    handle.addEventListener('pointerdown', (event) => {
+      if (event.target.closest('button')) return;
+      startX = event.clientX; startY = event.clientY;
+      const rect = panel.getBoundingClientRect();
+      originLeft = rect.left; originTop = rect.top;
+      panel.classList.add('is-dragging');
+      handle.setPointerCapture(event.pointerId);
+    });
+    handle.addEventListener('pointermove', (event) => {
+      if (!panel.classList.contains('is-dragging')) return;
+      const maxLeft = Math.max(8, window.innerWidth - panel.offsetWidth - 8);
+      const maxTop = Math.max(8, window.innerHeight - panel.offsetHeight - 8);
+      panel.style.left = `${Math.min(maxLeft, Math.max(8, originLeft + event.clientX - startX))}px`;
+      panel.style.top = `${Math.min(maxTop, Math.max(8, originTop + event.clientY - startY))}px`;
+      panel.style.right = 'auto'; panel.style.bottom = 'auto';
+      this.position = { left: parseInt(panel.style.left, 10), top: parseInt(panel.style.top, 10) };
+    });
+    const stopDrag = () => panel.classList.remove('is-dragging');
+    handle.addEventListener('pointerup', stopDrag);
+    handle.addEventListener('pointercancel', stopDrag);
+  }
+};

@@ -22,6 +22,37 @@ const mimeTypes = {
 };
 
 const server = http.createServer((req, res) => {
+  if (req.method === 'POST' && req.url.split('?')[0] === '/api/chat') {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 10000) req.destroy();
+    });
+    req.on('end', () => {
+      try {
+        const { query } = JSON.parse(body || '{}');
+        if (!query || !String(query).trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({ error: 'Query message is required.' }));
+        }
+        const message = String(query).trim();
+        let responseText = 'Follow instructions from official local emergency managers. For immediate danger, call 112 or use the ApdaSetu SOS report.';
+        if (/shelter|safe area|evacuat/i.test(message)) {
+          responseText = 'Open the Shelter Map in your citizen dashboard to view verified shelter locations, live vacancy, facilities, and safe routes. Do not travel through flooded or blocked roads.';
+        } else if (/flood|water|rain/i.test(message)) {
+          responseText = 'Flood safety alert: move to higher ground, avoid roads near low-lying drains, never walk or drive through floodwater, and switch off electricity only if it is safe.';
+        } else if (/hospital|medical|doctor|injur|ambulance/i.test(message)) {
+          responseText = 'For urgent medical help, call 108. Keep the injured person safe and still, share your location, and do not move someone with suspected head, neck, or spine injuries unless they face immediate danger.';
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ query: message, response: responseText, timestamp: new Date().toISOString(), source: 'ApdaSetu Emergency KB' }));
+      } catch (error) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'Please send a valid chat message.' }));
+      }
+    });
+    return;
+  }
   const cleanUrl = req.url.split('?')[0];
   let filePath = path.join(BASE_PATH, cleanUrl === '/' ? 'index.html' : cleanUrl);
   const ext = path.extname(filePath).toLowerCase();

@@ -74,9 +74,11 @@ window.ApdaApp = {
 
         ${this.renderFooter()}
       </div>
+      ${window.ApdaEmergencyAssistant.renderWidget()}
     `;
 
     this.observeRevealElements();
+    window.ApdaEmergencyAssistant.initDrag();
   },
 
   observeRevealElements() {
