@@ -72,10 +72,15 @@ window.ApdaNavbar = {
           </div>
 
           <!-- Utility Controls & Actions -->
-          <div class="relative flex items-center gap-2 sm:gap-3">
+          <div class="relative flex flex-nowrap items-center justify-end gap-2">
+            <button onclick="window.ApdaEmergencyCallModal.open()" class="header-action-control shrink-0 whitespace-nowrap rounded-xl bg-red-600 px-2 py-2.5 text-[10px] font-bold text-white shadow-lg shadow-red-600/30 sm:px-3 sm:text-xs">Emergency Call</button>
+            <select aria-label="Select language" onchange="window.ApdaI18n.setLanguage(this.value)" style="width: 4.75rem" class="header-language-control shrink-0 rounded-xl border border-slate-700 bg-slate-800 px-2 py-2.5 text-[10px] font-medium text-slate-200 focus:outline-none sm:text-xs">
+              ${window.ApdaI18n.languages.map(l => `<option value="${l.code}" ${l.code === currentLang ? 'selected' : ''}>${l.native}</option>`).join('')}
+            </select>
+            ${user ? '' : `<button onclick="window.ApdaAuthModal.open('citizen', 'login')" class="header-action-control shrink-0 whitespace-nowrap rounded-xl bg-red-600 px-2 py-2.5 text-[10px] font-bold text-white shadow-lg shadow-red-600/30 sm:px-3 sm:text-xs">Login/Sign up</button>`}
             <!-- Emergency Helplines Quick Modal -->
             <button onclick="window.ApdaEmergencyCallModal.open()" 
-                    class="px-2.5 sm:px-3 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-red-600/30 transition-all">
+                    class="hidden">
               <span>📞</span>
               <span class="hidden sm:inline">112 / Helplines</span>
             </button>
@@ -115,10 +120,10 @@ window.ApdaNavbar = {
               </button>
             `}
 
-            <div class="relative" onmouseenter="window.ApdaNavbar.cancelMenuClose()" onmouseleave="window.ApdaNavbar.scheduleMenuClose()">
+            <div class="relative ${user ? '' : 'hidden'}" onmouseenter="window.ApdaNavbar.cancelMenuClose()" onmouseleave="window.ApdaNavbar.scheduleMenuClose()">
             <button id="navbar-overflow-toggle" onclick="window.ApdaNavbar.openMenu()" onmouseenter="window.ApdaNavbar.openMenu()" onfocus="window.ApdaNavbar.openMenu()"
-                    class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-white text-2xl font-black leading-none shadow-lg shadow-amber-500/25 hover:brightness-110 transition-all"
-                    title="More options" aria-label="More options" aria-expanded="${this.isMenuOpen}">&#8942;</button>
+                    style="width: 4.75rem" class="header-menu-control h-10 rounded-xl"
+                    title="More options" aria-label="More options" aria-expanded="${this.isMenuOpen}"><span class="header-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span></button>
 
               <div id="navbar-overflow-menu" onmouseenter="window.ApdaNavbar.openMenu()" class="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 p-2 shadow-2xl shadow-black/50 ${this.isMenuOpen ? '' : 'hidden'}">
                 ${user ? `
@@ -127,13 +132,8 @@ window.ApdaNavbar = {
                     <span><strong class="block text-white">${user.name}</strong><small class="capitalize text-slate-400">${user.role} dashboard</small></span>
                   </button>
                 ` : `
-                  <button onclick="window.ApdaAuthModal.open('citizen', 'login'); window.ApdaNavbar.closeMenu()" class="w-full rounded-xl bg-red-600 px-3 py-2.5 text-left text-xs font-bold text-white hover:bg-red-500">Enter the Website</button>
+                  <span class="hidden"></span>
                 `}
-                <div class="my-2 border-t border-slate-700"></div>
-                <label class="block px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-slate-500" for="navbar-language">Language</label>
-                <select id="navbar-language" onchange="window.ApdaI18n.setLanguage(this.value); window.ApdaNavbar.isMenuOpen = false" class="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-xs text-slate-200 focus:border-red-500 focus:outline-none">
-                  ${window.ApdaI18n.languages.map(l => `<option value="${l.code}" ${l.code === currentLang ? 'selected' : ''}>${l.native}</option>`).join('')}
-                </select>
                 ${user ? `
                   <div class="my-2 border-t border-slate-700"></div>
                   <button onclick="window.ApdaState.logout(); window.ApdaNavbar.isMenuOpen = false" class="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-red-300 hover:bg-red-500/10">Log out</button>

@@ -206,6 +206,7 @@ window.ApdaProfileSettings = {
         const holder = document.getElementById('profile-photo-placeholder');
         if (holder) holder.outerHTML = `<img id="profile-photo-preview" src="${event.target.result}" alt="Profile picture" class="w-full h-full object-cover">`;
       }
+      window.ApdaState.emitChange();
       window.ApdaState.notify('Profile picture updated successfully.', 'success');
     };
     reader.readAsDataURL(file);

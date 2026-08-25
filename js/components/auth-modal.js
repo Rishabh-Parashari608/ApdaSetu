@@ -1,13 +1,13 @@
 // [volunteer done] Auth & Role Selection Modal with unified design system and minimalist volunteer demo dropdown
 window.ApdaAuthModal = {
-  activeTab: 'citizen', // 'demo' | 'citizen' | 'responder' | 'volunteer'
+  activeTab: 'citizen', // 'citizen' | 'responder' | 'volunteer'
   authMode: 'login', // 'login' | 'signup'
   selectedDemoVolunteerId: 'VLT-001', // [volunteer done] Selected identity for the volunteer response demo.
   volunteerDropdownOpen: false, // [volunteer done] Dropdown is closed by default and reveals names only on user interaction.
   outsideClickListenerBound: false, // [volunteer done] Global click handler for outside click dismissal.
 
   open(defaultTab = 'citizen', authMode = 'login') {
-    this.activeTab = ['demo', 'citizen', 'responder', 'volunteer'].includes(defaultTab) ? defaultTab : 'citizen';
+    this.activeTab = ['citizen', 'responder', 'volunteer'].includes(defaultTab) ? defaultTab : 'citizen';
     this.authMode = authMode;
     this.volunteerDropdownOpen = false; // [volunteer done] Reset dropdown state on open
     this.close();
@@ -93,7 +93,7 @@ window.ApdaAuthModal = {
             <span class="text-2xl">${this.authMode === 'signup' ? '📝' : '🔐'}</span>
             <div>
               <h3 class="font-extrabold text-xl text-white">${this.authMode === 'signup' ? 'Create your ApdaSetu account' : 'Login to ApdaSetu'}</h3>
-              <p class="text-xs text-slate-400">${this.authMode === 'signup' ? 'Choose the interface that matches your role' : 'Select your role or use 1-Click Quick Demo'}</p>
+              <p class="text-xs text-slate-400">Choose the interface that matches your role</p>
             </div>
           </div>
           <button onclick="window.ApdaAuthModal.close()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 font-bold">×</button>
@@ -106,9 +106,6 @@ window.ApdaAuthModal = {
 
         <!-- Role Tabs -->
         <div class="flex rounded-xl bg-slate-900/90 p-1 mt-4 border border-slate-800">
-          <button onclick="window.ApdaAuthModal.switchTab('demo')" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all ${this.activeTab === 'demo' ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">
-            ⚡ Quick Demo
-          </button>
           <button onclick="window.ApdaAuthModal.switchTab('citizen')" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all ${this.activeTab === 'citizen' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">
             👤 Citizen
           </button>
@@ -123,7 +120,6 @@ window.ApdaAuthModal = {
 
         <!-- Tab Body -->
         <div class="mt-5">
-          ${this.activeTab === 'demo' ? this.renderDemoTab() : ''}
           ${this.activeTab === 'citizen' ? this.renderCitizenTab() : ''}
           ${this.activeTab === 'responder' ? this.renderResponderTab() : ''}
           ${this.activeTab === 'volunteer' ? this.renderVolunteerTab() : ''}

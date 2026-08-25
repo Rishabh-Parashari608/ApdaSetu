@@ -61,6 +61,79 @@
   filter: saturate(1.06) drop-shadow(0 2px 3px rgba(8, 30, 66, .2));
 }
 
+/* Header utility controls share a calm, responsive interaction treatment. */
+.header-action-control,
+.header-language-control {
+  border: 1px solid transparent;
+  transition: transform .22s cubic-bezier(.22, 1, .36, 1), box-shadow .22s ease, background-color .22s ease, border-color .22s ease, filter .22s ease;
+}
+
+.header-action-control:hover {
+  transform: translateY(-2px);
+  background-color: #ef4444;
+  border-color: rgba(254, 202, 202, .42);
+  box-shadow: 0 12px 22px rgba(220, 38, 38, .34);
+  filter: saturate(1.08);
+}
+
+.header-language-control:hover {
+  transform: translateY(-2px);
+  border-color: rgba(251, 191, 36, .65);
+  background-color: #3b2a1b;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, .24);
+}
+
+.header-action-control:focus-visible,
+.header-language-control:focus-visible {
+  outline: 2px solid #fbbf24;
+  outline-offset: 3px;
+}
+
+.header-action-control:active,
+.header-language-control:active {
+  transform: translateY(0) scale(.98);
+}
+
+.header-menu-control {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(148, 163, 184, .22);
+  background: #1e293b;
+  box-shadow: 0 8px 18px rgba(2, 6, 23, .28);
+  transition: transform .22s cubic-bezier(.22, 1, .36, 1), background-color .22s ease, border-color .22s ease, box-shadow .22s ease;
+}
+
+.header-menu-control:hover,
+.header-menu-control[aria-expanded="true"] {
+  transform: translateY(-2px);
+  border-color: rgba(251, 191, 36, .5);
+  background: #0f172a;
+  box-shadow: 0 12px 22px rgba(2, 6, 23, .4);
+}
+
+.header-menu-control:focus-visible {
+  outline: 2px solid #fbbf24;
+  outline-offset: 3px;
+}
+
+.header-menu-icon {
+  display: grid;
+  width: 1.2rem;
+  gap: .25rem;
+}
+
+.header-menu-icon span {
+  display: block;
+  height: 2px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  transition: transform .22s ease, opacity .18s ease;
+}
+
+.header-menu-control[aria-expanded="true"] .header-menu-icon span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.header-menu-control[aria-expanded="true"] .header-menu-icon span:nth-child(2) { opacity: 0; }
+.header-menu-control[aria-expanded="true"] .header-menu-icon span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
 @keyframes brand-lockup-enter {
   from { opacity: 0; transform: translateX(-10px); }
   to { opacity: 1; transform: translateX(0); }
