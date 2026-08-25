@@ -32,6 +32,7 @@ window.ApdaI18n = {
       volunteerCommand: 'Command Center',
       reportDisasterNow: 'Report Emergency / SOS',
       findShelters: 'Find Nearby Shelters',
+      enterWebsite: 'Enter in Website',
       joinVolunteer: 'Volunteer / Responder Login',
       howItWorks: 'How ApdaSetu Works',
       step1Title: '1. Citizen Reports SOS',

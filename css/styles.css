@@ -620,7 +620,42 @@ body:not(.high-contrast) :is([class*="to-cyan"], [class*="to-sky"], [class*="to-
   transition: left .55s ease;
 }
 .hero-primary-cta:hover::after { left: 120%; }
-.hero-secondary-cta { box-shadow: inset 0 1px rgba(255,255,255,.08), 0 10px 24px rgba(1, 8, 24, .26); }
+.hero-secondary-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(67, 46, 28, .96), rgba(43, 31, 23, .96)) !important;
+  border-color: rgba(251, 191, 36, .32) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.12), 0 10px 24px rgba(1, 8, 24, .26), 0 0 0 rgba(251, 191, 36, 0);
+  animation: enter-website-pulse 3s ease-in-out infinite;
+  transition: transform .28s cubic-bezier(.2, .8, .2, 1), box-shadow .28s ease, border-color .28s ease, background .28s ease;
+}
+.hero-secondary-cta::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 26%, rgba(255,255,255,.2) 47%, transparent 66%);
+  transform: translateX(-135%);
+  transition: transform .7s ease;
+}
+.hero-secondary-cta:hover {
+  transform: translateY(-4px) scale(1.025);
+  border-color: rgba(253, 224, 71, .8) !important;
+  background: linear-gradient(135deg, rgba(91, 58, 24, .98), rgba(58, 38, 19, .98)) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.18), 0 16px 34px rgba(1, 8, 24, .4), 0 0 26px rgba(251, 191, 36, .18);
+}
+.hero-secondary-cta:hover::before { transform: translateX(135%); }
+.hero-secondary-cta:active { transform: translateY(-1px) scale(.98); }
+.hero-secondary-cta:focus-visible { outline: 3px solid rgba(253, 224, 71, .9); outline-offset: 4px; }
+@keyframes enter-website-pulse {
+  0%, 100% { box-shadow: inset 0 1px rgba(255,255,255,.12), 0 10px 24px rgba(1, 8, 24, .26), 0 0 0 rgba(251, 191, 36, 0); }
+  50% { box-shadow: inset 0 1px rgba(255,255,255,.16), 0 12px 28px rgba(1, 8, 24, .3), 0 0 20px rgba(251, 191, 36, .14); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-secondary-cta { animation: none; transition: none; }
+  .hero-secondary-cta::before { transition: none; }
+}
 .stats-bar {
   background: transparent;
   border: 0;

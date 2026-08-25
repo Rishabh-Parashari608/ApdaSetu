@@ -59,9 +59,9 @@ window.ApdaHomepage = {
                 ${t('reportDisasterNow')}
               </button>
 
-              <button onclick="window.ApdaState.setView('citizen'); window.ApdaState.setCitizenTab('shelters');" class="hero-secondary-cta w-full sm:w-auto px-7 py-4 rounded-2xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
+              <button onclick="window.ApdaAuthModal.open('citizen', 'login')" class="hero-secondary-cta w-full sm:w-auto px-7 py-4 rounded-2xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
                 <span>📍</span>
-                ${t('findShelters')}
+                ${t('enterWebsite')}
               </button>
             </div>
 
