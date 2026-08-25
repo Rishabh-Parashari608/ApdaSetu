@@ -345,12 +345,114 @@ window.ApdaCitizenDashboard = {
     this.initLossesGraph();
   },
 
+  animateForecastGraphs() {
+    const tempLine = document.getElementById('apd-forecast-temp-line');
+    const tempArea = document.getElementById('apd-forecast-temp-area');
+    const riverLine = document.getElementById('apd-forecast-river-line');
+    const riverArea = document.getElementById('apd-forecast-river-area');
+
+    if (!tempLine || !tempArea || !riverLine || !riverArea) return;
+
+    const tempPoints = [
+      {x: 73, y: 90}, {x: 160, y: 78}, {x: 247, y: 104},
+      {x: 334, y: 64}, {x: 421, y: 78}, {x: 508, y: 50}, {x: 582, y: 64}
+    ];
+
+    const riverPoints = [
+      {x: 73, y: 110}, {x: 160, y: 104}, {x: 247, y: 94},
+      {x: 334, y: 82}, {x: 421, y: 88}, {x: 508, y: 101}, {x: 582, y: 107}
+    ];
+
+    const tempCircles = document.querySelectorAll('.apd-forecast-point');
+    const riverCircles = document.querySelectorAll('.apd-river-point');
+    const tempLabels = document.querySelectorAll('#apd-forecast-temp-labels text');
+    const riverLabels = document.querySelectorAll('#apd-forecast-river-labels text');
+
+    // Initially hide all points and labels
+    tempCircles.forEach(c => {
+      c.style.opacity = '0';
+      c.style.transform = 'scale(0)';
+      c.style.transformOrigin = `${c.getAttribute('cx')}px ${c.getAttribute('cy')}px`;
+      c.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+    });
+    riverCircles.forEach(c => {
+      c.style.opacity = '0';
+      c.style.transform = 'scale(0)';
+      c.style.transformOrigin = `${c.getAttribute('cx')}px ${c.getAttribute('cy')}px`;
+      c.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+    });
+    tempLabels.forEach(l => {
+      l.style.opacity = '0';
+      l.style.transition = 'opacity 0.3s ease';
+    });
+    riverLabels.forEach(l => {
+      l.style.opacity = '0';
+      l.style.transition = 'opacity 0.3s ease';
+    });
+
+    const duration = 2500; // 2.5 seconds animation
+    const startTime = performance.now();
+
+    const animate = (now) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const ep = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+
+      // Draw Temperature Forecast
+      const tempMif = ep * (tempPoints.length - 1);
+      const tempMi = Math.floor(tempMif);
+      const tempSeg = tempMif - tempMi;
+      let cTempPts = tempPoints.slice(0, tempMi + 1);
+      let tx = tempPoints[tempMi].x, ty = tempPoints[tempMi].y;
+      if (tempMi < tempPoints.length - 1) {
+        const np = tempPoints[tempMi + 1];
+        tx = tempPoints[tempMi].x + tempSeg * (np.x - tempPoints[tempMi].x);
+        ty = tempPoints[tempMi].y + tempSeg * (np.y - tempPoints[tempMi].y);
+        cTempPts = [...cTempPts, {x: tx, y: ty}];
+      }
+      const tempLineD = 'M ' + cTempPts.map(p => p.x + ' ' + p.y).join(' L ');
+      tempLine.setAttribute('d', tempLineD);
+      tempArea.setAttribute('d', tempLineD + ' L ' + tx + ' 198 L 73 198 Z');
+
+      // Draw River level
+      const riverMif = ep * (riverPoints.length - 1);
+      const riverMi = Math.floor(riverMif);
+      const riverSeg = riverMif - riverMi;
+      let cRiverPts = riverPoints.slice(0, riverMi + 1);
+      let rx = riverPoints[riverMi].x, ry = riverPoints[riverMi].y;
+      if (riverMi < riverPoints.length - 1) {
+        const np = riverPoints[riverMi + 1];
+        rx = riverPoints[riverMi].x + riverSeg * (np.x - riverPoints[riverMi].x);
+        ry = riverPoints[riverMi].y + riverSeg * (np.y - riverPoints[riverMi].y);
+        cRiverPts = [...cRiverPts, {x: rx, y: ry}];
+      }
+      const riverLineD = 'M ' + cRiverPts.map(p => p.x + ' ' + p.y).join(' L ');
+      riverLine.setAttribute('d', riverLineD);
+      riverArea.setAttribute('d', riverLineD + ' L ' + rx + ' 161 L 73 161 Z');
+
+      // Unhide circles and text labels
+      for (let i = 0; i < tempPoints.length; i++) {
+        if (i <= tempMi) {
+          if (tempCircles[i]) { tempCircles[i].style.opacity = '1'; tempCircles[i].style.transform = 'scale(1)'; }
+          if (riverCircles[i]) { riverCircles[i].style.opacity = '1'; riverCircles[i].style.transform = 'scale(1)'; }
+          if (tempLabels[i]) tempLabels[i].style.opacity = '1';
+          if (riverLabels[i]) riverLabels[i].style.opacity = '1';
+        }
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    requestAnimationFrame(animate);
+  },
+
   showForecast() {
     const modal = document.getElementById('apd-forecast-modal');
     if (!modal) return;
     modal.classList.remove('is-open');
     requestAnimationFrame(() => modal.classList.add('is-open'));
     this.selectForecast('Today', '28', '72', 'Heavy rain expected. Keep an umbrella handy and plan travel carefully.', '89', '24', '2');
+    setTimeout(() => this.animateForecastGraphs(), 350);
   },
   toggleCalendar() {
     const calendar = document.getElementById('apd-forecast-calendar');
@@ -470,22 +572,159 @@ window.ApdaCitizenDashboard = {
     const x = [73, 160, 247, 334, 421, 508, 582];
     const labels = days.map((item, index) => index === 0 ? 'Selected' : item.date.toLocaleDateString('en-IN', { weekday: 'short' }));
     const tempY = days.map(item => Math.round(198 - (item.temperature - 20) * 14));
+    
     const tempChart = document.getElementById('apd-temp-chart');
     if (tempChart) {
       const grid = [30, 72, 114, 156, 198].map(y => `<line x1="54" y1="${y}" x2="600" y2="${y}"/>`).join('');
       const bars = days.map((item, index) => `<rect x="${x[index] - 18}" y="${198 - item.rain * 1.3}" width="36" height="${item.rain * 1.3}" rx="4" fill="#fbbf24"/>`).join('');
-      const points = tempY.map((y, index) => `${x[index]},${y}`).join(' ');
-      const labelsSvg = days.map((item, index) => `<text x="${x[index] - 11}" y="${tempY[index] - 10}">${item.temperature}°</text>`).join('');
+      const labelsSvg = days.map((item, index) => `<text x="${x[index] - 11}" y="${tempY[index] - 10}" style="opacity:0; transition:opacity 0.2s ease;">${item.temperature}°</text>`).join('');
       const daysSvg = labels.map((label, index) => `<text x="${x[index]}" y="220">${label}</text>`).join('');
-      tempChart.innerHTML = `<defs><linearGradient id="fc-area-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fbbf24" stop-opacity=".28"/><stop offset="100%" stop-color="#fbbf24" stop-opacity=".02"/></linearGradient><linearGradient id="fc-line-grad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#fde68a"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient></defs><g stroke="rgba(251,191,36,.08)" stroke-width="1">${grid}</g><g fill="rgba(251,191,36,.4)" font-size="10" font-weight="700"><text x="10" y="34">32°</text><text x="10" y="76">29°</text><text x="10" y="118">26°</text><text x="10" y="160">23°</text><text x="10" y="202">20°</text></g><g opacity=".22">${bars}</g><path d="M${x[0]} ${tempY[0]} ${tempY.map((y, i) => `L${x[i]} ${y}`).join(' ')} L582 198 L73 198 Z" fill="url(#fc-area-grad)"/><polyline points="${points}" fill="none" stroke="url(#fc-line-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><g fill="#1a1400" stroke="#fbbf24" stroke-width="2.5">${tempY.map((y, i) => `<circle cx="${x[i]}" cy="${y}" r="5"/>`).join('')}</g><g fill="rgba(253,230,138,.92)" font-size="10" font-weight="800">${labelsSvg}</g><g fill="rgba(251,191,36,.48)" font-size="10" font-weight="700" text-anchor="middle">${daysSvg}</g>`;
+      
+      tempChart.innerHTML = `
+        <defs>
+          <linearGradient id="fc-area-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fbbf24" stop-opacity=".28"/>
+            <stop offset="100%" stop-color="#fbbf24" stop-opacity=".02"/>
+          </linearGradient>
+          <linearGradient id="fc-line-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#fde68a"/>
+            <stop offset="100%" stop-color="#f59e0b"/>
+          </linearGradient>
+          <filter id="fc-glow">
+            <feGaussianBlur stdDeviation="2.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g stroke="rgba(251,191,36,.08)" stroke-width="1">${grid}</g>
+        <g fill="rgba(251,191,36,.4)" font-size="10" font-weight="700">
+          <text x="10" y="34">32°</text>
+          <text x="10" y="76">29°</text>
+          <text x="10" y="118">26°</text>
+          <text x="10" y="160">23°</text>
+          <text x="10" y="202">20°</text>
+        </g>
+        <g opacity=".22">${bars}</g>
+        <path id="apd-forecast-temp-area" d="" fill="url(#fc-area-grad)"/>
+        <path id="apd-forecast-temp-line" d="" fill="none" stroke="url(#fc-line-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#fc-glow)"/>
+        <g id="apd-forecast-temp-circles" fill="#1a1400" stroke="#fbbf24" stroke-width="2.5">
+          ${tempY.map((y, i) => `<circle cx="${x[i]}" cy="${y}" r="5" style="opacity:0; transform:scale(0); transform-origin: ${x[i]}px ${y}px; transition: transform 0.25s ease, opacity 0.25s ease; cursor:pointer;" onclick="window.ApdaCitizenDashboard.selectForecast('${days[i].date.toLocaleDateString('en-IN', { weekday: 'long' })}','${days[i].temperature}','${days[i].humidity}','☔ Forecast selected.','${days[i].humidity}','${days[i].wind}','${days[i].visibility}')"/>`).join('')}
+        </g>
+        <g id="apd-forecast-temp-labels" fill="rgba(253,230,138,.92)" font-size="10" font-weight="800">${labelsSvg}</g>
+        <g fill="rgba(251,191,36,.48)" font-size="10" font-weight="700" text-anchor="middle">${daysSvg}</g>
+      `;
     }
+
     const riverChart = document.getElementById('apd-river-chart');
+    let levels = [];
+    let levelY = [];
     if (riverChart) {
-      const levels = days.map((item, index) => +(3.4 + item.rain / 75 + Math.sin(index * 1.5) * .18).toFixed(1));
-      const levelY = levels.map(level => Math.round(161 - (level - 2.5) * 36));
-      riverChart.innerHTML = `<defs><linearGradient id="river-area-live" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fbbf24" stop-opacity=".28"/><stop offset="100%" stop-color="#fbbf24" stop-opacity=".02"/></linearGradient><linearGradient id="river-line-live" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#fde68a"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient></defs><g stroke="rgba(251,191,36,.08)" stroke-width="1"><line x1="54" y1="25" x2="600" y2="25"/><line x1="54" y1="61" x2="600" y2="61"/><line x1="54" y1="97" x2="600" y2="97"/><line x1="54" y1="133" x2="600" y2="133"/><line x1="54" y1="161" x2="600" y2="161"/></g><line x1="54" y1="43" x2="600" y2="43" stroke="rgba(251,191,36,.42)" stroke-width="1" stroke-dasharray="4 4"/><text x="57" y="39" fill="rgba(253,230,138,.55)" font-size="9" font-weight="700">alert level 5.0 m</text><path d="M${x[0]} ${levelY[0]} ${levelY.map((y, i) => `L${x[i]} ${y}`).join(' ')} L582 161 L73 161 Z" fill="url(#river-area-live)"/><polyline points="${levelY.map((y, i) => `${x[i]},${y}`).join(' ')}" fill="none" stroke="url(#river-line-live)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><g fill="#1a1400" stroke="#fbbf24" stroke-width="2.5">${levelY.map((y, i) => `<circle cx="${x[i]}" cy="${y}" r="4"/>`).join('')}</g><g fill="rgba(253,230,138,.9)" font-size="10" font-weight="800">${levels.map((level, i) => `<text x="${x[i] - 11}" y="${levelY[i] - 10}">${level}</text>`).join('')}</g><g fill="rgba(251,191,36,.48)" font-size="10" font-weight="700" text-anchor="middle">${labels.map((label, i) => `<text x="${x[i]}" y="182">${label}</text>`).join('')}</g>`;
+      levels = days.map((item, index) => +(3.4 + item.rain / 75 + Math.sin(index * 1.5) * .18).toFixed(1));
+      levelY = levels.map(level => Math.round(161 - (level - 2.5) * 36));
+      const labelsSvg = levels.map((level, index) => `<text x="${x[index] - 11}" y="${levelY[index] - 10}" style="opacity:0; transition:opacity 0.2s ease;">${level}</text>`).join('');
+      
+      riverChart.innerHTML = `
+        <defs>
+          <linearGradient id="river-area-live" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fbbf24" stop-opacity=".28"/>
+            <stop offset="100%" stop-color="#fbbf24" stop-opacity=".02"/>
+          </linearGradient>
+          <linearGradient id="river-line-live" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#fde68a"/>
+            <stop offset="100%" stop-color="#f59e0b"/>
+          </linearGradient>
+        </defs>
+        <g stroke="rgba(251,191,36,.08)" stroke-width="1">
+          <line x1="54" y1="25" x2="600" y2="25"/>
+          <line x1="54" y1="61" x2="600" y2="61"/>
+          <line x1="54" y1="97" x2="600" y2="97"/>
+          <line x1="54" y1="133" x2="600" y2="133"/>
+          <line x1="54" y1="161" x2="600" y2="161"/>
+        </g>
+        <line x1="54" y1="43" x2="600" y2="43" stroke="rgba(251,191,36,.42)" stroke-width="1" stroke-dasharray="4 4"/>
+        <text x="57" y="39" fill="rgba(253,230,138,.55)" font-size="9" font-weight="700">alert level 5.0 m</text>
+        <g fill="rgba(251,191,36,.38)" font-size="10" font-family="Inter,system-ui,sans-serif" font-weight="700">
+          <text x="10" y="29">5.5m</text>
+          <text x="10" y="65">4.5m</text>
+          <text x="10" y="101">3.5m</text>
+          <text x="10" y="137">2.5m</text>
+        </g>
+        <path id="apd-forecast-river-area" d="" fill="url(#river-area-live)"/>
+        <path id="apd-forecast-river-line" d="" fill="none" stroke="url(#river-line-live)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#fc-glow)"/>
+        <g id="apd-forecast-river-circles" fill="#1a1400" stroke="#fbbf24" stroke-width="2.5">
+          ${levelY.map((y, i) => `<circle cx="${x[i]}" cy="${y}" r="4" style="opacity:0; transform:scale(0); transform-origin: ${x[i]}px ${y}px; transition: transform 0.25s ease, opacity 0.25s ease;"/>`).join('')}
+        </g>
+        <g id="apd-forecast-river-labels" fill="rgba(253,230,138,.9)" font-size="10" font-weight="800">${labelsSvg}</g>
+        <g fill="rgba(251,191,36,.48)" font-size="10" font-weight="700" text-anchor="middle">${labels.map((label, i) => `<text x="${x[i]}" y="182">${label}</text>`).join('')}</g>
+      `;
       setTimeout(() => { const status = document.querySelector('.apd-river-status'); if (status) status.textContent = `${levels[0] > 4.7 ? 'Watch' : 'Normal'} · ${levels[0]} m`; }, 0);
     }
+
+    // Now start the progressive drawing animation loop
+    const tempLine = document.getElementById('apd-forecast-temp-line');
+    const tempArea = document.getElementById('apd-forecast-temp-area');
+    const riverLine = document.getElementById('apd-forecast-river-line');
+    const riverArea = document.getElementById('apd-forecast-river-area');
+
+    if (!tempLine || !tempArea || !riverLine || !riverArea) return;
+
+    const tempCircles = tempChart ? tempChart.querySelectorAll('#apd-forecast-temp-circles circle') : [];
+    const riverCircles = riverChart ? riverChart.querySelectorAll('#apd-forecast-river-circles circle') : [];
+    const tempLabelsEls = tempChart ? tempChart.querySelectorAll('#apd-forecast-temp-labels text') : [];
+    const riverLabelsEls = riverChart ? riverChart.querySelectorAll('#apd-forecast-river-labels text') : [];
+
+    const duration = 2500; // 2.5 seconds animate
+    const startTime = performance.now();
+
+    const animate = (now) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const ep = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+
+      // Temp Graph
+      const tempMif = ep * (x.length - 1);
+      const tempMi = Math.floor(tempMif);
+      const tempSeg = tempMif - tempMi;
+      let cTempPts = x.slice(0, tempMi + 1).map((cx, idx) => ({ x: cx, y: tempY[idx] }));
+      let tx = x[tempMi], ty = tempY[tempMi];
+      if (tempMi < x.length - 1) {
+        const nx = x[tempMi + 1];
+        const ny = tempY[tempMi + 1];
+        tx = x[tempMi] + tempSeg * (nx - x[tempMi]);
+        ty = tempY[tempMi] + tempSeg * (ny - tempY[tempMi]);
+        cTempPts.push({ x: tx, y: ty });
+      }
+      const tempLineD = 'M ' + cTempPts.map(p => p.x + ' ' + p.y).join(' L ');
+      tempLine.setAttribute('d', tempLineD);
+      tempArea.setAttribute('d', tempLineD + ' L ' + tx + ' 198 L 73 198 Z');
+
+      // River Graph
+      let rx = x[tempMi], ry = levelY[tempMi];
+      let cRiverPts = x.slice(0, tempMi + 1).map((cx, idx) => ({ x: cx, y: levelY[idx] }));
+      if (tempMi < x.length - 1) {
+        const nx = x[tempMi + 1];
+        const ny = levelY[tempMi + 1];
+        rx = x[tempMi] + tempSeg * (nx - x[tempMi]);
+        ry = levelY[tempMi] + tempSeg * (ny - levelY[tempMi]);
+        cRiverPts.push({ x: rx, y: ry });
+      }
+      const riverLineD = 'M ' + cRiverPts.map(p => p.x + ' ' + p.y).join(' L ');
+      riverLine.setAttribute('d', riverLineD);
+      riverArea.setAttribute('d', riverLineD + ' L ' + rx + ' 161 L 73 161 Z');
+
+      // Reveal points and labels
+      for (let i = 0; i < x.length; i++) {
+        if (i <= tempMi) {
+          if (tempCircles[i]) { tempCircles[i].style.opacity = '1'; tempCircles[i].style.transform = 'scale(1)'; }
+          if (riverCircles[i]) { riverCircles[i].style.opacity = '1'; riverCircles[i].style.transform = 'scale(1)'; }
+          if (tempLabelsEls[i]) tempLabelsEls[i].style.opacity = '1';
+          if (riverLabelsEls[i]) riverLabelsEls[i].style.opacity = '1';
+        }
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    requestAnimationFrame(animate);
   },
   selectCalendarDate(button, dateLabel) {
     document.querySelectorAll('.apd-calendar-day.is-selected').forEach(day => day.classList.remove('is-selected'));
@@ -813,21 +1052,9 @@ window.ApdaCitizenDashboard = {
           .apd-river-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #86efac; box-shadow: 0 0 8px rgba(134,239,172,.65); }
         .apd-forecast-point { cursor: pointer; transition: all 0.2s ease; }
         .apd-forecast-point:hover { r: 7; filter: drop-shadow(0 0 8px #fbbf24); }
-        /* draw-on animation */
-        .apd-forecast-modal.is-open .apd-temp-line {
-          stroke-dasharray: 700; stroke-dashoffset: 700;
-          animation: forecastDraw 1.2s cubic-bezier(.16,1,.3,1) forwards;
-        }
-        .apd-forecast-modal.is-open .apd-forecast-point { animation: forecastPoint .5s backwards; }
-        .apd-forecast-modal.is-open .apd-forecast-point:nth-child(1) { animation-delay:.05s; }
-        .apd-forecast-modal.is-open .apd-forecast-point:nth-child(2) { animation-delay:.12s; }
-        .apd-forecast-modal.is-open .apd-forecast-point:nth-child(3) { animation-delay:.19s; }
-        .apd-forecast-modal.is-open .apd-forecast-point:nth-child(4) { animation-delay:.26s; }
-        .apd-forecast-modal.is-open .apd-forecast-point:nth-child(5) { animation-delay:.33s; }
-        .apd-forecast-modal.is-open .apd-forecast-point:nth-child(6) { animation-delay:.40s; }
-        .apd-forecast-modal.is-open .apd-forecast-point:nth-child(7) { animation-delay:.47s; }
-        @keyframes forecastDraw { to { stroke-dashoffset: 0; } }
-        @keyframes forecastPoint { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+        /* JS-driven draw-on animation placeholder */
+        .apd-forecast-point { cursor: pointer; transition: transform 0.2s ease, opacity 0.2s ease; transform-origin: center; }
+        .apd-forecast-point:hover { transform: scale(1.4) !important; filter: drop-shadow(0 0 8px #fbbf24); }
         /* detail bar */
          .apd-forecast-detail {
           min-height: 52px; padding: 0.85rem 1rem;
