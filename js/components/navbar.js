@@ -55,7 +55,10 @@ window.ApdaNavbar = {
           
           <!-- Logo & Brand -->
           <!-- [volunteer done] Route the brand safely to all three role dashboards -->
-          <div class="flex items-center gap-3 cursor-pointer" onclick="window.ApdaState.setView(window.ApdaState.currentUser ? (window.ApdaState.currentUser.role === 'responder' ? 'responder' : window.ApdaState.currentUser.role === 'volunteer' ? 'volunteer' : 'citizen') : 'home')">
+          <div class="brand-lockup flex items-center gap-3 cursor-pointer" role="button" tabindex="0" aria-label="Go to ApdaSetu home" onclick="window.ApdaState.setView(window.ApdaState.currentUser ? (window.ApdaState.currentUser.role === 'responder' ? 'responder' : window.ApdaState.currentUser.role === 'volunteer' ? 'volunteer' : 'citizen') : 'home')" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }">
+            <span class="brand-logo-frame" aria-hidden="true">
+              <img class="brand-logo-image" src="assets/apdasetu-logo.png" alt="" />
+            </span>
             <div>
               <div class="flex items-center gap-2">
                 <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-amber-100 to-amber-300 bg-clip-text text-transparent">
