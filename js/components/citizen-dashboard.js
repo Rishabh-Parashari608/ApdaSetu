@@ -4,6 +4,347 @@
 // ═══════════════════════════════════════════════════════════════
 
 window.ApdaCitizenDashboard = {
+  lossesGraphAnimated: false,
+  initLossesGraph() {
+    const card = document.getElementById('apd-losses-graph-card');
+    if (!card) return;
+
+    // Fade in graph container
+    setTimeout(() => {
+      card.style.opacity = '1';
+    }, 50);
+
+    const svg = document.getElementById('apd-losses-svg');
+    if (!svg) return;
+
+    const data = window.ApdaSeedData.globalDisasterLosses || [];
+    if (data.length === 0) return;
+
+    const width = 600;
+    const height = 200;
+    const padding = { left: 50, right: 40, top: 20, bottom: 30 };
+
+    // X-scale maps indices (0 to data.length - 1) to (padding.left to width - padding.right)
+    const getX = (index) => padding.left + index * ((width - padding.left - padding.right) / (data.length - 1));
+
+    // Y-scale maps losses (0 to 400) to (height - padding.bottom to padding.top)
+    const maxYVal = 400;
+    const getY = (val) => (height - padding.bottom) - (val / maxYVal) * (height - padding.top - padding.bottom);
+
+    // Save calculated coordinates for reference
+    const points = data.map((item, idx) => ({
+      year: item.year,
+      loss: item.loss,
+      x: getX(idx),
+      y: getY(item.loss)
+    }));
+
+    // Precalculate % changes
+    const pctChanges = data.map((item, idx) => {
+      if (idx === 0) return 0;
+      const prev = data[idx - 1].loss;
+      return ((item.loss - prev) / prev) * 100;
+    });
+
+    // Draw Grid Lines & Axes Labels
+    const gridG = document.getElementById('apd-losses-grid');
+    if (gridG) {
+      gridG.innerHTML = '';
+      const yTicks = [0, 100, 200, 300, 400];
+      yTicks.forEach(tick => {
+        const y = getY(tick);
+        // Draw grid line
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', padding.left);
+        line.setAttribute('y1', y);
+        line.setAttribute('x2', width - padding.right);
+        line.setAttribute('y2', y);
+        gridG.appendChild(line);
+
+        // Draw Y label
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', padding.left - 10);
+        text.setAttribute('y', y + 3);
+        text.setAttribute('fill', 'rgba(148, 163, 184, 0.45)');
+        text.setAttribute('font-size', '9');
+        text.setAttribute('font-weight', '700');
+        text.setAttribute('text-anchor', 'end');
+        text.textContent = `$${tick}B`;
+        gridG.appendChild(text);
+      });
+
+      // Draw X axis years (every 5 years to keep it clean: 2000, 2005, 2010, 2015, 2020, 2024)
+      data.forEach((item, idx) => {
+        if (item.year % 5 === 0 || item.year === 2024) {
+          const x = getX(idx);
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', x);
+          text.setAttribute('y', height - 10);
+          text.setAttribute('fill', 'rgba(148, 163, 184, 0.45)');
+          text.setAttribute('font-size', '9');
+          text.setAttribute('font-weight', '700');
+          text.setAttribute('text-anchor', 'middle');
+          text.textContent = item.year;
+          gridG.appendChild(text);
+        }
+      });
+    }
+
+    const linePath = document.getElementById('apd-losses-line');
+    const areaPath = document.getElementById('apd-losses-area');
+    const pointsG = document.getElementById('apd-losses-points');
+    const yearCounter = document.getElementById('apd-graph-year-counter');
+    const valueCounter = document.getElementById('apd-graph-value-counter');
+    const tooltip = document.getElementById('apd-graph-tooltip');
+
+    let isDragPanning = false;
+    let dragStart = { x: 0, y: 0 };
+    // Current viewBox state: [minX, minY, width, height]
+    let currentVb = [0, 0, width, height];
+
+    const updateViewBoxAttr = () => {
+      svg.setAttribute('viewBox', currentVb.join(' '));
+    };
+
+    const animateGraph = () => {
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) {
+        window.ApdaCitizenDashboard.lossesGraphAnimated = true;
+        enableInteractivity();
+        return;
+      }
+
+      const duration = 5000; // exactly 5 seconds
+      const startTime = performance.now();
+
+      const run = (now) => {
+        const elapsed = now - startTime;
+        let progress = Math.min(elapsed / duration, 1);
+
+        // Smooth ease-in-out progress curve
+        const easeProgress = progress < 0.5 
+          ? 2 * progress * progress 
+          : -1 + (4 - 2 * progress) * progress;
+
+        const maxIndexFloat = easeProgress * (points.length - 1);
+        const maxIndex = Math.floor(maxIndexFloat);
+        const segmentProgress = maxIndexFloat - maxIndex;
+
+        let currentPoints = points.slice(0, maxIndex + 1);
+        let tipX = points[maxIndex].x;
+        let tipY = points[maxIndex].y;
+
+        if (maxIndex < points.length - 1) {
+          const nextPt = points[maxIndex + 1];
+          tipX = points[maxIndex].x + segmentProgress * (nextPt.x - points[maxIndex].x);
+          tipY = points[maxIndex].y + segmentProgress * (nextPt.y - points[maxIndex].y);
+          currentPoints.push({ x: tipX, y: tipY });
+        }
+
+        // Draw Line
+        const lineD = 'M ' + currentPoints.map(p => `${p.x} ${p.y}`).join(' L ');
+        linePath.setAttribute('d', lineD);
+
+        // Draw Area
+        const areaD = `${lineD} L ${tipX} ${height - padding.bottom} L ${points[0].x} ${height - padding.bottom} Z`;
+        areaPath.setAttribute('d', areaD);
+
+        // Draw circles for completed points
+        if (pointsG) {
+          pointsG.innerHTML = '';
+          for (let i = 0; i <= maxIndex; i++) {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', points[i].x);
+            circle.setAttribute('cy', points[i].y);
+            circle.setAttribute('r', i === maxIndex && maxIndex === points.length - 1 ? '6' : '3.5');
+            circle.setAttribute('fill', '#090d16');
+            circle.setAttribute('stroke', '#22d3ee');
+            circle.setAttribute('stroke-width', '2');
+            circle.setAttribute('class', 'apd-losses-svg-point');
+            pointsG.appendChild(circle);
+          }
+          // Dynamic glowing point for the current drawing tip
+          const tipCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          tipCircle.setAttribute('cx', tipX);
+          tipCircle.setAttribute('cy', tipY);
+          tipCircle.setAttribute('r', '5.5');
+          tipCircle.setAttribute('fill', '#22d3ee');
+          tipCircle.setAttribute('stroke', '#ffffff');
+          tipCircle.setAttribute('stroke-width', '1.5');
+          tipCircle.setAttribute('style', 'filter: drop-shadow(0px 0px 4px #22d3ee);');
+          pointsG.appendChild(tipCircle);
+        }
+
+        // Dynamic Counters
+        const currentYear = 2000 + Math.round(easeProgress * 24);
+        const currentIdx = Math.min(24, Math.round(easeProgress * 24));
+        if (yearCounter) yearCounter.textContent = currentYear;
+        if (valueCounter) valueCounter.textContent = `$${points[currentIdx].loss}B`;
+
+        // Smooth camera zoom out effect
+        const vbWidth = 120 + easeProgress * (width - 120);
+        currentVb = [0, 0, vbWidth, height];
+        updateViewBoxAttr();
+
+        if (progress < 1) {
+          requestAnimationFrame(run);
+        } else {
+          // Animation completed
+          window.ApdaCitizenDashboard.lossesGraphAnimated = true;
+          enableInteractivity();
+        }
+      };
+
+      requestAnimationFrame(run);
+    };
+
+    const enableInteractivity = () => {
+      // 1. Reset viewBox to standard
+      currentVb = [0, 0, width, height];
+      updateViewBoxAttr();
+
+      // 2. Draw standard full paths
+      const lineD = 'M ' + points.map(p => `${p.x} ${p.y}`).join(' L ');
+      linePath.setAttribute('d', lineD);
+      const areaD = `${lineD} L ${points[points.length - 1].x} ${height - padding.bottom} L ${points[0].x} ${height - padding.bottom} Z`;
+      areaPath.setAttribute('d', areaD);
+
+      // Render all hoverable points
+      if (pointsG) {
+        pointsG.innerHTML = '';
+        points.forEach((pt, idx) => {
+          const isLatest = idx === points.length - 1;
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', pt.x);
+          circle.setAttribute('cy', pt.y);
+          circle.setAttribute('r', isLatest ? '6' : '3.5');
+          circle.setAttribute('fill', isLatest ? '#22d3ee' : '#090d16');
+          circle.setAttribute('stroke', '#22d3ee');
+          circle.setAttribute('stroke-width', '2');
+          circle.setAttribute('class', 'apd-losses-svg-point');
+          if (isLatest) {
+            circle.setAttribute('style', 'filter: drop-shadow(0px 0px 4px #22d3ee);');
+          }
+
+          // Tooltip Hover Listeners
+          circle.addEventListener('mouseenter', (e) => {
+            circle.setAttribute('r', isLatest ? '8' : '6.5');
+            const pct = pctChanges[idx];
+            let pctHtml = '';
+            if (idx > 0) {
+              const direction = pct >= 0 ? 'up' : 'down';
+              const arrow = pct >= 0 ? '▲' : '▼';
+              pctHtml = `<div class="apd-graph-tooltip-diff ${direction}">${arrow} ${Math.abs(pct).toFixed(1)}% vs prev year</div>`;
+            } else {
+              pctHtml = `<div class="apd-graph-tooltip-diff flat">— base year</div>`;
+            }
+
+            tooltip.innerHTML = `
+              <div class="apd-graph-tooltip-year">${pt.year}</div>
+              <div class="apd-graph-tooltip-loss">Losses: $${pt.loss} Billion</div>
+              ${pctHtml}
+            `;
+
+            // Position tooltip relative to the SVG element
+            const rect = svg.getBoundingClientRect();
+            const scaleX = rect.width / currentVb[2];
+            const scaleY = rect.height / currentVb[3];
+            const clientX = (pt.x - currentVb[0]) * scaleX;
+            const clientY = (pt.y - currentVb[1]) * scaleY;
+
+            tooltip.style.left = `${clientX}px`;
+            tooltip.style.top = `${clientY - 12}px`;
+            tooltip.classList.add('is-visible');
+          });
+
+          circle.addEventListener('mouseleave', () => {
+            circle.setAttribute('r', isLatest ? '6' : '3.5');
+            tooltip.classList.remove('is-visible');
+          });
+
+          pointsG.appendChild(circle);
+        });
+      }
+
+      // Restore final year / loss values to UI header
+      if (yearCounter) yearCounter.textContent = '2024';
+      if (valueCounter) valueCounter.textContent = `$280B`;
+
+      // 3. Pan and Zoom Handlers
+      svg.classList.add('apd-losses-svg-interactive');
+
+      // Mouse drag to pan
+      svg.addEventListener('mousedown', (e) => {
+        isDragPanning = true;
+        svg.classList.add('apd-losses-svg-panning');
+        dragStart = { x: e.clientX, y: e.clientY };
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragPanning) return;
+        const rect = svg.getBoundingClientRect();
+        const scaleX = currentVb[2] / rect.width;
+        const scaleY = currentVb[3] / rect.height;
+
+        const dx = (e.clientX - dragStart.x) * scaleX;
+        const dy = (e.clientY - dragStart.y) * scaleY;
+
+        currentVb[0] -= dx;
+        currentVb[1] -= dy;
+
+        // Constraint panning inside realistic bounds
+        currentVb[0] = Math.max(-100, Math.min(width - currentVb[2] + 100, currentVb[0]));
+        currentVb[1] = Math.max(-50, Math.min(height - currentVb[3] + 50, currentVb[1]));
+
+        updateViewBoxAttr();
+        dragStart = { x: e.clientX, y: e.clientY };
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isDragPanning) {
+          isDragPanning = false;
+          svg.classList.remove('apd-losses-svg-panning');
+        }
+      });
+
+      // Scroll wheel to zoom
+      svg.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = svg.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const svgMouseX = currentVb[0] + (mouseX / rect.width) * currentVb[2];
+        const svgMouseY = currentVb[1] + (mouseY / rect.height) * currentVb[3];
+
+        const zoomFactor = e.deltaY < 0 ? 0.9 : 1.1;
+
+        const newWidth = currentVb[2] * zoomFactor;
+        const newHeight = currentVb[3] * zoomFactor;
+
+        if (newWidth > width * 1.5 || newWidth < 80) return;
+
+        currentVb[0] = svgMouseX - (mouseX / rect.width) * newWidth;
+        currentVb[1] = svgMouseY - (mouseY / rect.height) * newHeight;
+        currentVb[2] = newWidth;
+        currentVb[3] = newHeight;
+
+        updateViewBoxAttr();
+      });
+    };
+
+    if (!window.ApdaCitizenDashboard.lossesGraphAnimated) {
+      animateGraph();
+    } else {
+      enableInteractivity();
+    }
+  },
+
+  resetGraphAnimation() {
+    window.ApdaCitizenDashboard.lossesGraphAnimated = false;
+    this.initLossesGraph();
+  },
+
   showForecast() {
     const modal = document.getElementById('apd-forecast-modal');
     if (!modal) return;
@@ -200,7 +541,7 @@ window.ApdaCitizenDashboard = {
     const location = user.city || 'Hatigaon, Guwahati';
     const avatar = user.profileImage
       ? `<img src="${user.profileImage}" alt="${user.name}" class="w-full h-full object-cover">`
-      : `<span class="text-sm font-bold">${user.name ? user.name.charAt(0) : 'C'}</span>`;
+      : `<span>${user.name ? user.name.charAt(0) : 'C'}</span>`;
 
     const openAlerts = window.ApdaState.alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
     const firstName = user.name.split(' ')[0];
@@ -570,6 +911,169 @@ window.ApdaCitizenDashboard = {
         .apd-sos-btn:hover { box-shadow: 0 20px 38px rgba(104,9,25,.74), 0 0 0 5px rgba(255,222,110,.58), inset 0 2px rgba(255,255,255,.46), inset 0 -6px 10px rgba(88,8,20,.3); }
         @keyframes sosAttention { 0%,100% { transform: translateY(0); filter: saturate(1); } 50% { transform: translateY(-3px); filter: saturate(1.18) brightness(1.08); } }
         @media (prefers-reduced-motion: reduce) { .apd-sos-btn { animation: none; } }
+
+        /* ═══ Global Losses Graph Styling ═══ */
+        .apd-losses-graph-card {
+          flex: 1 1 auto;
+          max-width: 600px;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          padding: 1.25rem;
+          background: linear-gradient(145deg, rgba(17, 24, 39, 0.9), rgba(15, 23, 42, 0.95));
+          border: 1px solid rgba(250, 204, 21, 0.19);
+          border-radius: 16px;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+        }
+        .apd-graph-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 1rem;
+        }
+        .apd-graph-title {
+          font-size: 1rem;
+          font-weight: 800;
+          color: #22d3ee;
+          letter-spacing: -0.01em;
+        }
+        .apd-graph-subtitle {
+          font-size: 0.7rem;
+          color: #94a3b8;
+          font-weight: 500;
+          margin-top: 0.125rem;
+        }
+        .apd-graph-counter-wrap {
+          font-size: 1.125rem;
+          font-weight: 900;
+          color: #f59e0b;
+          display: flex;
+          align-items: center;
+          gap: 0.375rem;
+          background: rgba(6, 182, 212, 0.08);
+          border: 1px solid rgba(6, 182, 212, 0.2);
+          padding: 0.25rem 0.625rem;
+          border-radius: 8px;
+          flex-shrink: 0;
+        }
+        .apd-counter-year {
+          color: #fbbf24;
+        }
+        .apd-counter-val {
+          color: #22d3ee;
+          text-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
+        }
+        .apd-graph-svg-container {
+          position: relative;
+          width: 100%;
+          background: #090d16;
+          border: 1px solid rgba(148, 163, 184, 0.08);
+          border-radius: 12px;
+          margin-top: 0.75rem;
+          overflow: hidden;
+          touch-action: none;
+        }
+        .apd-losses-svg-panning {
+          cursor: grabbing !important;
+        }
+        .apd-losses-svg-interactive {
+          cursor: grab;
+        }
+        .apd-graph-tooltip {
+          position: absolute;
+          display: none;
+          pointer-events: none;
+          background: rgba(15, 23, 42, 0.95);
+          border: 1.5px solid #22d3ee;
+          border-radius: 8px;
+          padding: 0.5rem 0.75rem;
+          font-size: 0.725rem;
+          color: #f8fafc;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 12px rgba(34, 211, 238, 0.25);
+          z-index: 100;
+          transition: opacity 0.15s ease, transform 0.15s ease;
+          transform: translate(-50%, -100%) scale(0.95);
+          opacity: 0;
+        }
+        .apd-graph-tooltip.is-visible {
+          display: block;
+          transform: translate(-50%, -100%) scale(1);
+          opacity: 1;
+        }
+        .apd-graph-tooltip-year {
+          font-weight: 800;
+          color: #fbbf24;
+          margin-bottom: 0.125rem;
+        }
+        .apd-graph-tooltip-loss {
+          font-weight: 700;
+          color: #e2e8f0;
+        }
+        .apd-graph-tooltip-diff {
+          font-size: 0.65rem;
+          margin-top: 0.125rem;
+          font-weight: 600;
+        }
+        .apd-graph-tooltip-diff.up {
+          color: #f87171;
+        }
+        .apd-graph-tooltip-diff.down {
+          color: #34d399;
+        }
+        .apd-graph-tooltip-diff.flat {
+          color: #94a3b8;
+        }
+        .apd-graph-footer {
+          display: flex;
+          justify-content: flex-end;
+          margin-top: 0.5rem;
+        }
+        .apd-graph-reset-btn {
+          padding: 0.375rem 0.75rem;
+          border: 1px solid rgba(34, 211, 238, 0.25);
+          border-radius: 6px;
+          background: rgba(6, 182, 212, 0.1);
+          color: #22d3ee;
+          font-size: 0.7rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+        .apd-graph-reset-btn:hover {
+          background: rgba(6, 182, 212, 0.2);
+          border-color: rgba(34, 211, 238, 0.5);
+          color: #e0f2fe;
+          transform: translateY(-1px);
+        }
+        .apd-graph-reset-btn:active {
+          transform: translateY(0);
+        }
+
+        /* SVG styles */
+        .apd-losses-svg-point {
+          transition: r 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), fill 0.2s, stroke 0.2s;
+          cursor: pointer;
+        }
+        .apd-losses-svg-point:hover {
+          r: 6.5;
+        }
+
+        /* Layout modifications */
+        @media (min-width: 640px) {
+          .apd-losses-graph-card {
+            margin: 0 1rem;
+          }
+        }
+        @media (max-width: 1023px) {
+          .apd-losses-graph-card {
+            max-width: 100%;
+            margin: 1rem 0;
+            flex: 1 1 100%;
+          }
+        }
       </style>
 
       <div class="apd-dash">
@@ -584,6 +1088,7 @@ window.ApdaCitizenDashboard = {
                 <div class="apd-profile-address"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>${location}</div>
               </div>
             </div>
+
             <div class="apd-greeting-weather">
               <div class="apd-side-card">
                 <div class="apd-side-title">Weather</div>
@@ -902,7 +1407,7 @@ window.ApdaCitizenDashboard = {
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-xs text-slate-500 font-medium">Last updated: Just now</span>
-                  <button onclick="window.location.reload()" class="p-1.5 rounded-lg hover:bg-white/5 transition-colors" title="Refresh">
+                  <button onclick="window.ApdaLiveAlerts.refresh()" class="p-1.5 rounded-lg hover:bg-white/5 transition-colors" title="Refresh">
                     <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                   </button>
                 </div>
@@ -994,6 +1499,7 @@ window.ApdaCitizenDashboard = {
                 </div>
               </div>
             </div>
+
 
           </div>
         </div>

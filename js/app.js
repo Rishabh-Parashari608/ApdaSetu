@@ -85,6 +85,12 @@ window.ApdaApp = {
     this.observeRevealElements();
     window.ApdaEmergencyAssistant.initDrag();
     window.ApdaI18n.translateDocument(appContainer);
+
+    // Reset homepage graph state when navigating away so graph hides on re-entry
+    if (currentView !== 'home') {
+      window.ApdaHomepage._graphVisible = false;
+      window.ApdaHomepage._graphAnimated = false;
+    }
   },
 
   observeRevealElements() {

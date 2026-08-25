@@ -610,5 +610,34 @@ window.ApdaSeedData = {
       content: 'Citizens are advised to avoid walking through flood waters barefoot due to submerged debris. Mobile ambulances are reachable on hotline 108.',
       badge: 'District Directive'
     }
+  ],
+
+  // Global Disaster Losses (USD Billion, 2000 - 2024)
+  globalDisasterLosses: [
+    { year: 2000, loss: 58 },
+    { year: 2001, loss: 42 },
+    { year: 2002, loss: 60 },
+    { year: 2003, loss: 75 },
+    { year: 2004, loss: 145 },
+    { year: 2005, loss: 230 },
+    { year: 2006, loss: 62 },
+    { year: 2007, loss: 88 },
+    { year: 2008, loss: 205 },
+    { year: 2009, loss: 72 },
+    { year: 2010, loss: 152 },
+    { year: 2011, loss: 382 },
+    { year: 2012, loss: 186 },
+    { year: 2013, loss: 142 },
+    { year: 2014, loss: 113 },
+    { year: 2015, loss: 105 },
+    { year: 2016, loss: 158 },
+    { year: 2017, loss: 350 },
+    { year: 2018, loss: 172 },
+    { year: 2019, loss: 155 },
+    { year: 2020, loss: 220 },
+    { year: 2021, loss: 285 },
+    { year: 2022, loss: 275 },
+    { year: 2023, loss: 250 },
+    { year: 2024, loss: 280 }
   ]
 };

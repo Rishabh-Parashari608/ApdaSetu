@@ -1,9 +1,398 @@
 // Public Homepage Component
 
 window.ApdaHomepage = {
+  _graphVisible: false,
+  _graphAnimated: false,
+
+  showLossesGraph() {
+    // Remove any stale modal
+    const existing = document.getElementById('losses-modal-overlay');
+    if (existing) { this.closeLossesModal(); return; }
+
+    // Reset animation so it always replays on open
+    this._graphAnimated = false;
+
+    // Build modal DOM dynamically
+    const overlay = document.createElement('div');
+    overlay.id = 'losses-modal-overlay';
+    overlay.style.cssText = `
+      position:fixed;inset:0;z-index:9000;
+      display:flex;align-items:center;justify-content:center;
+      padding:1.5rem;
+      background:rgba(3,4,8,0.88);
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+      opacity:0;transition:opacity 0.35s ease;
+    `;
+    overlay.innerHTML = `
+      <div id="losses-modal-card" style="
+        position:relative;
+        width:min(900px,100%);
+        background:linear-gradient(145deg,rgba(18,14,6,0.98) 0%,rgba(10,8,3,0.99) 100%);
+        border:1px solid rgba(251,191,36,0.22);
+        border-radius:24px;
+        padding:2rem;
+        box-shadow:
+          0 40px 100px rgba(0,0,0,0.85),
+          0 0 0 1px rgba(251,191,36,0.05),
+          inset 0 1px 0 rgba(255,220,80,0.06),
+          0 0 80px rgba(202,138,4,0.07);
+        transform:scale(0.9) translateY(24px);
+        transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1),opacity 0.35s ease;
+        opacity:0;
+        overflow:hidden;
+      ">
+
+        <!-- Decorative amber glow orbs -->
+        <div style="position:absolute;top:-70px;left:-50px;width:220px;height:220px;background:radial-gradient(circle,rgba(251,191,36,0.1),transparent 70%);pointer-events:none;border-radius:50%;"></div>
+        <div style="position:absolute;bottom:-70px;right:-50px;width:240px;height:240px;background:radial-gradient(circle,rgba(202,138,4,0.08),transparent 70%);pointer-events:none;border-radius:50%;"></div>
+
+        <!-- Header Row -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+          <div>
+            <div style="display:flex;align-items:center;gap:0.625rem;margin-bottom:0.375rem;">
+              <div style="width:28px;height:28px;border-radius:8px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.28);display:flex;align-items:center;justify-content:center;font-size:0.875rem;">📊</div>
+              <span style="font-size:1.3rem;font-weight:900;color:#fbbf24;letter-spacing:-0.02em;text-shadow:0 0 20px rgba(251,191,36,0.3);">Global Disaster Losses</span>
+            </div>
+            <div style="font-size:0.72rem;color:#78716c;font-weight:500;padding-left:2.25rem;">
+              Economic damage in USD Billions · 2000 – 2024 · Scroll to zoom · Drag to pan
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:0.625rem;flex-shrink:0;">
+            <!-- Live Year / Value Counter -->
+            <div style="background:rgba(120,80,0,0.12);border:1px solid rgba(251,191,36,0.2);border-radius:10px;padding:0.4rem 0.875rem;display:flex;flex-direction:column;align-items:center;">
+              <span id="homepage-losses-year" style="color:#fde68a;font-size:1rem;font-weight:900;line-height:1;">2000</span>
+              <span id="homepage-losses-val" style="color:#f59e0b;font-size:0.75rem;font-weight:700;margin-top:1px;text-shadow:0 0 8px rgba(245,158,11,0.5);">$58B</span>
+            </div>
+
+            <!-- Replay Button -->
+            <button type="button" onclick="window.ApdaHomepage.resetLossesGraph()"
+              style="padding:0.45rem 0.875rem;border:1px solid rgba(251,191,36,0.22);border-radius:8px;
+                     background:rgba(120,80,0,0.12);color:#fbbf24;font-size:0.72rem;
+                     font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:0.375rem;"
+              onmouseover="this.style.background='rgba(180,120,0,0.22)';this.style.borderColor='rgba(251,191,36,0.5)'"
+              onmouseout="this.style.background='rgba(120,80,0,0.12)';this.style.borderColor='rgba(251,191,36,0.22)'">
+              🔄 Replay
+            </button>
+
+            <!-- Close Button -->
+            <button type="button" onclick="window.ApdaHomepage.closeLossesModal()"
+              aria-label="Close"
+              style="width:36px;height:36px;border-radius:10px;border:1px solid rgba(120,100,60,0.2);
+                     background:rgba(30,22,8,0.7);color:#78716c;font-size:1rem;
+                     cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;"
+              onmouseover="this.style.background='rgba(239,68,68,0.15)';this.style.color='#f87171';this.style.borderColor='rgba(239,68,68,0.3)'"
+              onmouseout="this.style.background='rgba(30,22,8,0.7)';this.style.color='#78716c';this.style.borderColor='rgba(120,100,60,0.2)'">
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(251,191,36,0.18),transparent);margin-bottom:1.25rem;"></div>
+
+        <!-- SVG Container -->
+        <div style="position:relative;width:100%;background:rgba(8,6,2,0.85);border:1px solid rgba(120,90,20,0.12);border-radius:14px;overflow:hidden;touch-action:none;">
+          <svg id="homepage-losses-svg" viewBox="0 0 600 200" style="width:100%;display:block;">
+            <defs>
+              <linearGradient id="hl-area-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#d97706" stop-opacity="0.45"/>
+                <stop offset="60%" stop-color="#92400e" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="#78350f" stop-opacity="0.0"/>
+              </linearGradient>
+              <linearGradient id="hl-line-grad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#b45309"/>
+                <stop offset="40%" stop-color="#f59e0b"/>
+                <stop offset="100%" stop-color="#fde68a"/>
+              </linearGradient>
+              <filter id="hl-glow" x="-25%" y="-25%" width="150%" height="150%">
+                <feGaussianBlur stdDeviation="4.5" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="hl-dot-glow" x="-120%" y="-120%" width="340%" height="340%">
+                <feGaussianBlur stdDeviation="3.5" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <g id="homepage-losses-grid" stroke="rgba(120,90,20,0.12)" stroke-width="1"></g>
+            <path id="homepage-losses-area" d="" fill="url(#hl-area-grad)" opacity="1"></path>
+            <path id="homepage-losses-line" d="" fill="none" stroke="url(#hl-line-grad)" stroke-width="2.5" filter="url(#hl-glow)" stroke-linecap="round" stroke-linejoin="round"></path>
+            <g id="homepage-losses-points"></g>
+          </svg>
+          <div id="homepage-losses-tooltip" style="
+            position:absolute;display:none;pointer-events:none;
+            background:linear-gradient(135deg,rgba(18,14,6,0.97),rgba(10,8,3,0.99));
+            border:1.5px solid #f59e0b;border-radius:10px;
+            padding:0.625rem 0.875rem;font-size:0.72rem;color:#fef3c7;
+            box-shadow:0 12px 28px rgba(0,0,0,0.7),0 0 16px rgba(245,158,11,0.25);
+            z-index:200;opacity:0;transition:opacity 0.15s ease;
+            transform:translate(-50%,-100%);min-width:130px;
+          "></div>
+        </div>
+
+        <!-- Footer note -->
+        <div style="margin-top:1rem;text-align:center;font-size:0.65rem;color:#44403c;font-weight:500;letter-spacing:0.02em;">
+          SOURCE: Munich Re NatCatSERVICE · Swiss Re sigma · World Bank · UNDRR &nbsp;·&nbsp; Values in 2024 USD
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Animate in
+    requestAnimationFrame(() => {
+      overlay.style.opacity = '1';
+      const card = document.getElementById('losses-modal-card');
+      if (card) {
+        requestAnimationFrame(() => {
+          card.style.opacity = '1';
+          card.style.transform = 'scale(1) translateY(0)';
+        });
+      }
+    });
+
+    // Close on backdrop click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) this.closeLossesModal();
+    });
+
+    // Close on ESC key
+    this._escHandler = (e) => { if (e.key === 'Escape') this.closeLossesModal(); };
+    window.addEventListener('keydown', this._escHandler);
+
+    // Init graph after animation frame
+    setTimeout(() => this.initLossesGraph(), 380);
+  },
+
+  closeLossesModal() {
+    const overlay = document.getElementById('losses-modal-overlay');
+    if (!overlay) return;
+    const card = document.getElementById('losses-modal-card');
+    if (card) { card.style.opacity = '0'; card.style.transform = 'scale(0.92) translateY(16px)'; }
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 380);
+    if (this._escHandler) { window.removeEventListener('keydown', this._escHandler); this._escHandler = null; }
+  },
+
+
+
+  initLossesGraph() {
+    const svg = document.getElementById('homepage-losses-svg');
+    if (!svg) return;
+
+    const data = window.ApdaSeedData.globalDisasterLosses || [];
+    if (data.length === 0) return;
+
+    const width = 600;
+    const height = 200;
+    const padding = { left: 50, right: 40, top: 20, bottom: 30 };
+
+    const getX = (index) => padding.left + index * ((width - padding.left - padding.right) / (data.length - 1));
+    const maxYVal = 400;
+    const getY = (val) => (height - padding.bottom) - (val / maxYVal) * (height - padding.top - padding.bottom);
+
+    const points = data.map((item, idx) => ({
+      year: item.year, loss: item.loss,
+      x: getX(idx), y: getY(item.loss)
+    }));
+
+    const pctChanges = data.map((item, idx) => {
+      if (idx === 0) return 0;
+      const prev = data[idx - 1].loss;
+      return ((item.loss - prev) / prev) * 100;
+    });
+
+    // Draw Grid
+    const gridG = document.getElementById('homepage-losses-grid');
+    if (gridG) {
+      gridG.innerHTML = '';
+      [0, 100, 200, 300, 400].forEach(tick => {
+        const y = getY(tick);
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', padding.left); line.setAttribute('y1', y);
+        line.setAttribute('x2', width - padding.right); line.setAttribute('y2', y);
+        gridG.appendChild(line);
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', padding.left - 10); text.setAttribute('y', y + 3);
+        text.setAttribute('fill', 'rgba(180,140,60,0.5)'); text.setAttribute('font-size', '9');
+        text.setAttribute('font-weight', '700'); text.setAttribute('text-anchor', 'end');
+        text.textContent = '$' + tick + 'B';
+        gridG.appendChild(text);
+      });
+      data.forEach((item, idx) => {
+        if (item.year % 5 === 0 || item.year === 2024) {
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', getX(idx)); text.setAttribute('y', height - 10);
+          text.setAttribute('fill', 'rgba(180,140,60,0.5)'); text.setAttribute('font-size', '9');
+          text.setAttribute('font-weight', '700'); text.setAttribute('text-anchor', 'middle');
+          text.textContent = item.year;
+          gridG.appendChild(text);
+        }
+      });
+    }
+
+    const linePath = document.getElementById('homepage-losses-line');
+    const areaPath = document.getElementById('homepage-losses-area');
+    const pointsG  = document.getElementById('homepage-losses-points');
+    const yearEl   = document.getElementById('homepage-losses-year');
+    const valEl    = document.getElementById('homepage-losses-val');
+    const tooltip  = document.getElementById('homepage-losses-tooltip');
+
+    let currentVb = [0, 0, width, height];
+    const setVb = () => svg.setAttribute('viewBox', currentVb.join(' '));
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const enableInteractivity = () => {
+      currentVb = [0, 0, width, height]; setVb();
+      const lineD = 'M ' + points.map(p => p.x + ' ' + p.y).join(' L ');
+      linePath.setAttribute('d', lineD);
+      const areaD = lineD + ' L ' + points[points.length-1].x + ' ' + (height - padding.bottom) + ' L ' + points[0].x + ' ' + (height - padding.bottom) + ' Z';
+      areaPath.setAttribute('d', areaD);
+      if (pointsG) {
+        pointsG.innerHTML = '';
+        points.forEach((pt, idx) => {
+          const isLatest = idx === points.length - 1;
+          const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y);
+          c.setAttribute('r', isLatest ? '6' : '3.5');
+          c.setAttribute('fill', isLatest ? '#f59e0b' : '#0a0802');
+          c.setAttribute('stroke', '#fbbf24'); c.setAttribute('stroke-width', '2');
+          c.style.cursor = 'pointer';
+          if (isLatest) c.style.filter = 'drop-shadow(0 0 6px #f59e0b)';
+
+          c.addEventListener('mouseenter', () => {
+            c.setAttribute('r', isLatest ? '8' : '6');
+            const pct = pctChanges[idx];
+            const arrow = pct >= 0 ? '▲' : '▼';
+            const pctHtml = idx > 0
+              ? '<div style="color:' + (pct >= 0 ? '#f87171' : '#34d399') + ';font-size:0.65rem;font-weight:600;margin-top:2px">' + arrow + ' ' + Math.abs(pct).toFixed(1) + '% vs prev year</div>'
+              : '<div style="color:#92400e;font-size:0.65rem;font-weight:600;margin-top:2px">— base year</div>';
+            tooltip.innerHTML = '<div style="font-weight:800;color:#fbbf24">' + pt.year + '</div><div style="font-weight:700;color:#fef3c7">Losses: $' + pt.loss + 'B</div>' + pctHtml;
+            const rect = svg.getBoundingClientRect();
+            const sx = rect.width / currentVb[2], sy = rect.height / currentVb[3];
+            tooltip.style.left = ((pt.x - currentVb[0]) * sx) + 'px';
+            tooltip.style.top  = ((pt.y - currentVb[1]) * sy - 12) + 'px';
+            tooltip.style.display = 'block'; tooltip.style.opacity = '1';
+          });
+          c.addEventListener('mouseleave', () => {
+            c.setAttribute('r', isLatest ? '6' : '3.5');
+            tooltip.style.opacity = '0';
+            setTimeout(() => { tooltip.style.display = 'none'; }, 150);
+          });
+          pointsG.appendChild(c);
+        });
+      }
+      if (yearEl) yearEl.textContent = '2024';
+      if (valEl)  valEl.textContent  = '$280B';
+      this._graphAnimated = true;
+
+      // Pan
+      let dragging = false, ds = {x:0,y:0};
+      svg.style.cursor = 'grab';
+      svg.addEventListener('mousedown', e => { dragging = true; svg.style.cursor='grabbing'; ds={x:e.clientX,y:e.clientY}; });
+      window.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        const rect = svg.getBoundingClientRect();
+        const dx = (e.clientX - ds.x) * (currentVb[2]/rect.width);
+        const dy = (e.clientY - ds.y) * (currentVb[3]/rect.height);
+        currentVb[0] = Math.max(-100, Math.min(width - currentVb[2] + 100, currentVb[0] - dx));
+        currentVb[1] = Math.max(-50, Math.min(height - currentVb[3] + 50, currentVb[1] - dy));
+        setVb(); ds = {x:e.clientX,y:e.clientY};
+      });
+      window.addEventListener('mouseup', () => { dragging = false; svg.style.cursor='grab'; });
+      svg.addEventListener('wheel', e => {
+        e.preventDefault();
+        const rect = svg.getBoundingClientRect();
+        const mx = currentVb[0] + (e.clientX - rect.left)/rect.width * currentVb[2];
+        const my = currentVb[1] + (e.clientY - rect.top)/rect.height * currentVb[3];
+        const f = e.deltaY < 0 ? 0.9 : 1.1;
+        const nw = currentVb[2] * f, nh = currentVb[3] * f;
+        if (nw > width * 1.5 || nw < 80) return;
+        currentVb[0] = mx - (e.clientX-rect.left)/rect.width * nw;
+        currentVb[1] = my - (e.clientY-rect.top)/rect.height * nh;
+        currentVb[2] = nw; currentVb[3] = nh; setVb();
+      }, { passive: false });
+    };
+
+    if (prefersReduced || this._graphAnimated) { enableInteractivity(); return; }
+
+    const duration = 5000;
+    const startTime = performance.now();
+    const run = (now) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const ep = progress < 0.5 ? 2*progress*progress : -1 + (4 - 2*progress)*progress;
+      const mif = ep * (points.length - 1);
+      const mi  = Math.floor(mif);
+      const seg = mif - mi;
+      let cPts = points.slice(0, mi + 1);
+      let tx = points[mi].x, ty = points[mi].y;
+      if (mi < points.length - 1) {
+        const np = points[mi+1];
+        tx = points[mi].x + seg*(np.x - points[mi].x);
+        ty = points[mi].y + seg*(np.y - points[mi].y);
+        cPts = [...cPts, {x:tx, y:ty}];
+      }
+      const lineD = 'M ' + cPts.map(p => p.x + ' ' + p.y).join(' L ');
+      linePath.setAttribute('d', lineD);
+      areaPath.setAttribute('d', lineD + ' L ' + tx + ' ' + (height-padding.bottom) + ' L ' + points[0].x + ' ' + (height-padding.bottom) + ' Z');
+
+      if (pointsG) {
+        pointsG.innerHTML = '';
+        for (let i = 0; i <= mi; i++) {
+          const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          c.setAttribute('cx', points[i].x); c.setAttribute('cy', points[i].y);
+          c.setAttribute('r', '3.5'); c.setAttribute('fill', '#0a0802');
+          c.setAttribute('stroke', '#f59e0b'); c.setAttribute('stroke-width', '2');
+          pointsG.appendChild(c);
+        }
+        const tip = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        tip.setAttribute('cx', tx); tip.setAttribute('cy', ty);
+        tip.setAttribute('r', '5.5'); tip.setAttribute('fill', '#fbbf24');
+        tip.setAttribute('stroke', '#fff8e1'); tip.setAttribute('stroke-width', '1.5');
+        tip.style.filter = 'drop-shadow(0 0 6px #f59e0b)';
+        pointsG.appendChild(tip);
+      }
+
+      const ci = Math.min(24, Math.round(ep * 24));
+      if (yearEl) yearEl.textContent = 2000 + ci;
+      if (valEl)  valEl.textContent  = '$' + points[ci].loss + 'B';
+
+      const vbW = 120 + ep * (width - 120);
+      currentVb = [0, 0, vbW, height]; setVb();
+
+      if (progress < 1) { requestAnimationFrame(run); }
+      else { enableInteractivity(); }
+    };
+    requestAnimationFrame(run);
+  },
+
+  resetLossesGraph() {
+    this._graphAnimated = false;
+    this.initLossesGraph();
+  },
+
   render() {
     const t = (k) => window.ApdaI18n.t(k);
     const alerts = window.ApdaState.alerts;
+
+    // Helper to split text into animated words and characters for smooth left-to-right typing reveal
+    const animateText = (text, startIndex = 0, charDelay = 0.045) => {
+      const words = text.split(' ');
+      let charCount = startIndex;
+      const wordSpans = words.map(word => {
+        const chars = word.split('').map(char => {
+          const delay = charCount * charDelay;
+          charCount++;
+          return `<span class="animate-char-reveal" style="animation-delay: ${delay.toFixed(3)}s">${char}</span>`;
+        }).join('');
+        return `<span class="inline-block whitespace-nowrap">${chars}</span>`;
+      });
+      return { html: wordSpans.join(' '), nextIndex: charCount };
+    };
+
+    const line1 = animateText("Rapid Alert & AI-Powered Rescue", 0, 0.045);
 
     return `
       <div class="min-h-screen pb-20">
@@ -29,31 +418,42 @@ window.ApdaHomepage = {
 
         <!-- Hero Section -->
         <section class="home-hero reveal-on-scroll relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-none mx-auto">
+          
+          <div class="hero-slideshow">
+            <div class="hero-slide slide-1"><img src="assets/disaster_flood.jpg" alt="" /></div>
+            <div class="hero-slide slide-2"><img src="assets/disaster_cyclone.jpg" alt="" /></div>
+            <div class="hero-slide slide-3"><img src="assets/disaster_landslide.jpg" alt="" /></div>
+            <div class="hero-slide slide-4"><img src="assets/disaster_earthquake.jpg" alt="" /></div>
+            <div class="hero-slide slide-5"><img src="assets/disaster_wildfire.jpg" alt="" /></div>
+          </div>
+
           <div class="home-hero-overlay absolute inset-0 rounded-[2rem] pointer-events-none"></div>
           <!-- Background Glows -->
           <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
           <div class="absolute top-1/3 right-10 w-72 h-72 bg-orange-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-          <div class="home-hero__content text-center relative z-10 max-w-3xl mx-auto">
+          <div class="home-hero__content text-left relative z-10 max-w-3xl mr-auto ml-0">
             
             <div class="home-hero__eyebrow inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-400/10 border border-cyan-300/25 text-cyan-200 text-xs font-bold mb-6">
               <span class="w-2 h-2 rounded-full bg-cyan-300 animate-ping"></span>
               National Multi-Agency Disaster Coordination Bridge
             </div>
 
-            <h1 class="home-hero__title text-4xl sm:text-6xl font-black tracking-tight text-white leading-tight">
-              Rapid Alert & AI-Powered Rescue <br>
-              <span class="bg-gradient-to-r from-amber-200 via-amber-400 to-orange-500 bg-clip-text text-transparent">
-                When Seconds Save Lives.
+            <h1 class="home-hero__title text-4xl sm:text-6xl font-black tracking-tight text-white leading-tight" aria-label="Rapid Alert &amp; AI-Powered Rescue When Seconds Save Lives.">
+              <span aria-hidden="true">
+                ${line1.html} <br>
+                <span class="bg-gradient-to-r from-amber-200 via-amber-400 to-orange-500 bg-clip-text text-transparent typing-reveal-line-2">
+                  When Seconds Save Lives.
+                </span>
               </span>
             </h1>
 
-            <p class="mt-6 max-w-2xl mx-auto text-sm sm:text-base text-slate-300 leading-relaxed">
+            <p class="mt-6 max-w-2xl mr-auto text-sm sm:text-base text-slate-300 leading-relaxed">
               ${t('missionStatement')}
             </p>
 
             <!-- Hero Action Buttons -->
-            <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div class="mt-8 flex flex-col sm:flex-row items-center justify-start gap-4">
               <button onclick="window.ApdaSOSModal.openReportModal()" class="hero-primary-cta w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:to-red-700 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-red-600/40 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3">
                 <span class="text-xl">🚨</span>
                 ${t('reportDisasterNow')}
@@ -62,6 +462,11 @@ window.ApdaHomepage = {
               <button onclick="window.ApdaAuthModal.open('citizen', 'login')" class="hero-secondary-cta w-full sm:w-auto px-7 py-4 rounded-2xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
                 <span>📍</span>
                 ${t('enterWebsite')}
+              </button>
+
+              <button id="homepage-losses-btn" onclick="window.ApdaHomepage.showLossesGraph()" class="w-full sm:w-auto px-7 py-4 rounded-2xl border border-cyan-500/30 bg-cyan-950/40 hover:bg-cyan-900/50 hover:border-cyan-400/50 text-cyan-300 font-bold text-sm transition-all flex items-center justify-center gap-2">
+                <span>📊</span>
+                <span class="losses-btn-label">View Global Disaster Losses</span>
               </button>
             </div>
 
