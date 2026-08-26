@@ -5,6 +5,32 @@
 
 window.ApdaCitizenDashboard = {
   lossesGraphAnimated: false,
+  slideshowTimer: null,
+  initDisasterSlideshow() {
+    const slides = Array.from(document.querySelectorAll('.apd-disaster-slide'));
+    const dots = Array.from(document.querySelectorAll('.apd-disaster-dot'));
+    if (!slides.length) return;
+
+    if (this.slideshowTimer) window.clearInterval(this.slideshowTimer);
+
+    let activeIndex = 0;
+    const showSlide = (index) => {
+      slides.forEach((slide, slideIndex) => {
+        const isActive = slideIndex === index;
+        slide.classList.toggle('is-active', isActive);
+        slide.setAttribute('aria-hidden', String(!isActive));
+      });
+      dots.forEach((dot, dotIndex) => dot.classList.toggle('is-active', dotIndex === index));
+    };
+
+    showSlide(activeIndex);
+    if (slides.length > 1 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.slideshowTimer = window.setInterval(() => {
+        activeIndex = (activeIndex + 1) % slides.length;
+        showSlide(activeIndex);
+      }, 2000);
+    }
+  },
   initLossesGraph() {
     const card = document.getElementById('apd-losses-graph-card');
     if (!card) return;
@@ -909,6 +935,19 @@ window.ApdaCitizenDashboard = {
         .apd-profile-address { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.25rem; color: #64748b; font-size: 0.75rem; font-weight: 600; }
         .apd-profile-address svg { width: 14px; height: 14px; color: #fbbf24; }
 
+        /* Top-center disaster awareness slideshow */
+        .apd-disaster-slideshow { width: min(100%, 520px); flex: 1 1 420px; position: relative; overflow: hidden; border: 1px solid rgba(251, 191, 36, 0.68); border-radius: 20px; background: #0d120f; box-shadow: 0 0 0 4px rgba(251,191,36,0.08), 0 18px 42px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.15); aspect-ratio: 2.35 / 1; }
+        .apd-disaster-slideshow::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; border: 1px solid rgba(255,255,255,0.14); border-radius: inherit; }
+        .apd-disaster-slide { position: absolute; inset: 0; opacity: 0; transform: scale(1.035); transition: opacity 520ms ease, transform 2s ease; }
+        .apd-disaster-slide.is-active { opacity: 1; transform: scale(1); }
+        .apd-disaster-slide img { width: 100%; height: 100%; object-fit: cover; }
+        .apd-disaster-slide::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6,10,8,0.04) 42%, rgba(6,10,8,0.84) 100%); }
+        .apd-disaster-caption { position: absolute; z-index: 3; bottom: 0.7rem; left: 0.85rem; display: flex; align-items: center; gap: 0.4rem; color: #fff9e7; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+        .apd-disaster-caption::before { content: none; }
+        .apd-disaster-dots { position: absolute; z-index: 4; right: 0.85rem; bottom: 0.85rem; display: flex; gap: 0.3rem; }
+        .apd-disaster-dot { width: 6px; height: 6px; border-radius: 999px; background: rgba(255,255,255,0.48); transition: width 240ms ease, background-color 240ms ease; }
+        .apd-disaster-dot.is-active { width: 18px; background: #fbbf24; }
+
         /* Weather Widget */
         .apd-weather { display: flex; align-items: center; gap: 1rem; padding: 0.875rem; background: rgba(30, 41, 59, 0.3); border-radius: 12px; border: 1px solid rgba(148,163,184,0.06); }
         .apd-weather-icon { font-size: 1.75rem; }
@@ -1109,8 +1148,11 @@ window.ApdaCitizenDashboard = {
         .apd-greeting-weather { width: 320px; flex: 0 0 320px; }
         @media (max-width: 639px) {
           .apd-greeting-row { align-items: stretch; flex-direction: column; gap: 1rem; }
+          .apd-disaster-slideshow { width: 100%; flex-basis: auto; max-width: none; aspect-ratio: 2.5 / 1; }
           .apd-greeting-weather { width: 100%; flex-basis: auto; }
         }
+        @media (max-width: 520px) { .apd-disaster-slideshow { aspect-ratio: 1.75 / 1; } }
+        @media (prefers-reduced-motion: reduce) { .apd-disaster-slide { transition: none; } }
         .apd-weather-sidebar { display: none; }
 
         /* Scrollbar */
@@ -1315,6 +1357,15 @@ window.ApdaCitizenDashboard = {
                 <div class="apd-profile-address"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>${location}</div>
               </div>
             </div>
+
+            <section class="apd-disaster-slideshow" aria-label="Disaster awareness slideshow">
+              <div class="apd-disaster-slide is-active" aria-hidden="false"><img src="assets/disaster_landslide.jpg" alt="A road damaged by a landslide"><span class="apd-disaster-caption">Landslide</span></div>
+              <div class="apd-disaster-slide" aria-hidden="true"><img src="assets/disaster_cyclone.jpg" alt="Heavy winds and rain during a cyclone"><span class="apd-disaster-caption">Cyclone</span></div>
+              <div class="apd-disaster-slide" aria-hidden="true"><img src="assets/disaster_wildfire.jpg" alt="Wildfire spreading through forest"><span class="apd-disaster-caption">Wildfire</span></div>
+              <div class="apd-disaster-slide" aria-hidden="true"><img src="assets/disaster_earthquake.jpg" alt="Buildings damaged after an earthquake"><span class="apd-disaster-caption">Earthquake</span></div>
+              <div class="apd-disaster-slide" aria-hidden="true"><img src="assets/disaster_flood.jpg" alt="Flooded road during heavy rain"><span class="apd-disaster-caption">Flood</span></div>
+              <div class="apd-disaster-dots" aria-hidden="true"><span class="apd-disaster-dot is-active"></span><span class="apd-disaster-dot"></span><span class="apd-disaster-dot"></span><span class="apd-disaster-dot"></span><span class="apd-disaster-dot"></span></div>
+            </section>
 
             <div class="apd-greeting-weather">
               <div class="apd-side-card">

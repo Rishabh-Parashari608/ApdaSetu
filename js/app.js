@@ -88,6 +88,13 @@ window.ApdaApp = {
     }
     window.ApdaI18n.translateDocument(appContainer);
 
+    if (currentView === 'citizen') {
+      window.ApdaCitizenDashboard.initDisasterSlideshow();
+    } else if (window.ApdaCitizenDashboard.slideshowTimer) {
+      window.clearInterval(window.ApdaCitizenDashboard.slideshowTimer);
+      window.ApdaCitizenDashboard.slideshowTimer = null;
+    }
+
     // Reset homepage graph state when navigating away so graph hides on re-entry
     if (currentView !== 'home') {
       window.ApdaHomepage._graphVisible = false;
