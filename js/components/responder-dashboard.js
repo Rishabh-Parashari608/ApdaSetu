@@ -113,6 +113,7 @@ window.ApdaResponderDashboard = {
     const activeRequests = window.ApdaState.getActiveRequests();
     const resolvedRequests = window.ApdaState.getResolvedRequests();
     const deployedCount = window.ApdaState.rescueUnits.filter(u => u.status === 'Deployed').length;
+    const workingHours = Number(user.activeServiceHours || 0).toFixed(1);
 
     setTimeout(() => {
       this.startCountdownTimer();
@@ -133,14 +134,14 @@ window.ApdaResponderDashboard = {
             <div>
               <div class="flex items-center gap-2">
                 <h1 class="text-xl sm:text-2xl font-black text-white">
-                  Unified Disaster Response Command Center
+                  Responder Profile
                 </h1>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                  Duty Desk
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                  ONLINE
                 </span>
               </div>
-              <p class="text-xs text-slate-300 mt-1">
-                Commander: <strong>${user.name}</strong> • ${user.org || 'NDRF HQ'} • Badge: <span class="font-mono text-amber-300">${user.badge || 'NDRF-8842'}</span>
+              <p class="text-xs text-slate-200 mt-1">
+                <strong>${user.name}</strong> • Profile ID: <span class="font-mono text-amber-300">${user.id || 'RESP-NDRF-01'}</span> • Badge: <span class="font-mono text-amber-300">${user.badge || 'NDRF-8842'}</span> • Working hours: ${workingHours} / 12 • <button onclick="window.ApdaState.logout()" class="text-slate-300 hover:text-white font-bold">OFFLINE</button>
               </p>
             </div>
           </div>
@@ -155,33 +156,33 @@ window.ApdaResponderDashboard = {
         <!-- Operations KPI Counters Bar -->
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <div class="glass-panel p-4 rounded-2xl border border-red-500/30 bg-red-950/20">
-            <span class="text-2xl font-black text-red-400">${activeRequests.length}</span>
-            <p class="text-xs text-slate-300 font-semibold mt-0.5">Active Incidents</p>
-            <span class="text-[10px] text-red-300 font-bold">${activeRequests.filter(r => r.status === 'Submitted' || r.status === 'Verified' || r.status === 'Ground Confirmed').length} Need Action</span>
+            <span class="text-2xl font-black text-slate-100">${activeRequests.length}</span>
+            <p class="text-xs text-slate-100 font-semibold mt-0.5">Active Incidents</p>
+            <span class="text-[10px] text-slate-100 font-bold">${activeRequests.filter(r => r.status === 'Submitted' || r.status === 'Verified' || r.status === 'Ground Confirmed').length} Need Action</span>
           </div>
 
           <div class="glass-panel p-4 rounded-2xl border border-amber-500/30 bg-amber-950/20">
-            <span class="text-2xl font-black text-amber-400">${deployedCount} Units</span>
-            <p class="text-xs text-slate-300 font-semibold mt-0.5">Active Deployed</p>
-            <span class="text-[10px] text-slate-400">NDRF, Fire, Medical, SDRF</span>
+            <span class="text-2xl font-black text-slate-100">${deployedCount} Units</span>
+            <p class="text-xs text-slate-100 font-semibold mt-0.5">Active Deployed</p>
+            <span class="text-[10px] text-slate-100">NDRF, Fire, Medical, SDRF</span>
           </div>
 
           <div class="glass-panel p-4 rounded-2xl border border-emerald-500/30 bg-emerald-950/20">
-            <span class="text-2xl font-black text-emerald-400">${resolvedRequests.length}</span>
-            <p class="text-xs text-slate-300 font-semibold mt-0.5">Resolved Incidents</p>
-            <span class="text-[10px] text-emerald-300">Evacuation Completed</span>
+            <span class="text-2xl font-black text-slate-100">${resolvedRequests.length}</span>
+            <p class="text-xs text-slate-100 font-semibold mt-0.5">Resolved Incidents</p>
+            <span class="text-[10px] text-slate-100">Evacuation Completed</span>
           </div>
 
           <div class="glass-panel p-4 rounded-2xl border border-sky-500/30 bg-sky-950/20">
-            <span class="text-2xl font-black text-sky-400">${window.ApdaState.shelters.length} Shelters</span>
-            <p class="text-xs text-slate-300 font-semibold mt-0.5">Active Safe Hubs</p>
-            <span class="text-[10px] text-slate-400">1,600 Bed Capacity</span>
+            <span class="text-2xl font-black text-slate-100">${window.ApdaState.shelters.length} Shelters</span>
+            <p class="text-xs text-slate-100 font-semibold mt-0.5">Active Safe Hubs</p>
+            <span class="text-[10px] text-slate-100">1,600 Bed Capacity</span>
           </div>
 
           <div class="glass-panel p-4 rounded-2xl border border-purple-500/30 bg-purple-950/20 col-span-2 sm:col-span-1">
-            <span class="text-2xl font-black text-purple-400">120s</span>
-            <p class="text-xs text-slate-300 font-semibold mt-0.5">Response Window</p>
-            <span class="text-[10px] text-slate-400">Volunteer → Unit Escalation</span>
+            <span class="text-2xl font-black text-slate-100">120s</span>
+            <p class="text-xs text-slate-100 font-semibold mt-0.5">Response Window</p>
+            <span class="text-[10px] text-slate-100">Volunteer → Unit Escalation</span>
           </div>
         </div>
 
@@ -284,7 +285,7 @@ window.ApdaResponderDashboard = {
   renderIncidentCard(req) {
     const isCritical = req.severity === 'critical' || (req.aiScore && req.aiScore.riskScore >= 80);
     const isGroundConfirmed = req.status === 'Ground Confirmed' || Boolean(req.groundConfirmedBy);
-    const isVolunteerAssigned = req.status === 'Volunteer Assigned' || Boolean(req.assignedResponder);
+    const isVolunteerAssigned = Boolean(req.assignedResponder);
     const isDispatched = req.status === 'Dispatched' || Boolean(req.assignedTeam);
 
     const mobilization = window.ApdaState.volunteerMobilizations.find(m => m.requestId === req.id && m.status !== 'resolved');
@@ -297,7 +298,7 @@ window.ApdaResponderDashboard = {
     const isEscalated = (mobilization && (mobilization.escalated || mobilization.status === 'escalated')) || (eligibleMatches.length === 0 && !isVolunteerAssigned && !isDispatched);
 
     return `
-      <div class="glass-panel p-6 rounded-3xl border transition-all ${isCritical ? 'border-red-500/50 bg-red-950/15' : 'border-slate-700 bg-slate-900/60'} hover:border-amber-500/40">
+      <div class="response-card glass-panel p-6 rounded-3xl border ${isCritical ? 'border-red-500/50 bg-red-950/15' : 'border-slate-700 bg-slate-900/60'}">
 
         <!-- Incident Header -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-white/10">
@@ -402,14 +403,13 @@ window.ApdaResponderDashboard = {
         ` : ''}
 
         <!-- 2-Minute Volunteer Response Window & Matching Panel (Parts 4, 7, 14) -->
-        ${window.ApdaState.isIncidentActive(req) ? `
-        <div class="mt-4 p-4 rounded-2xl border ${isEscalated ? 'border-red-500/50 bg-red-950/20' : 'border-cyan-500/30 bg-slate-950/60'}">
+        ${window.ApdaState.isIncidentActive(req) ? `<div class="mt-4 p-4 rounded-2xl border ${isEscalated ? 'border-red-500/50 bg-red-950/20' : 'border-cyan-500/30 bg-slate-950/60'}">
           
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/10">
             <div>
               <div class="flex items-center gap-2">
                 <span class="text-xs font-black ${isEscalated ? 'text-red-400' : 'text-cyan-300'}">
-                  ${isVolunteerAssigned ? '🦺 RESPONDER ASSIGNED' : isEscalated ? '⚠️ VOLUNTEER RESPONSE WINDOW EXPIRED / 0 VOLUNTEERS' : '⏱️ VOLUNTEER RESPONSE WINDOW (2 MIN)'}
+                  ${isVolunteerAssigned ? `🦺 ${String(req.status || 'Volunteer Responding').toUpperCase()}` : isEscalated ? '⚠️ VOLUNTEER RESPONSE WINDOW EXPIRED / 0 VOLUNTEERS' : '⏱️ VOLUNTEER RESPONSE WINDOW (2 MIN)'}
                 </span>
                 ${mobilization && !isVolunteerAssigned && !isEscalated ? `
                   <span class="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 font-mono text-[11px] font-bold" data-countdown-expires="${mobilization.expiresAt}" data-mob-id="${mobilization.id}">
@@ -423,6 +423,11 @@ window.ApdaResponderDashboard = {
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
+              ${!isVolunteerAssigned && eligibleMatches.length > 0 ? `
+                <button onclick="window.ApdaState.scrambleNearbyVolunteers('${req.id}')" class="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs shadow-md flex items-center gap-1">
+                  <span>🚨</span> Scramble Volunteers
+                </button>
+              ` : ''}
               ${isEscalated && !isVolunteerAssigned && !isDispatched ? `
                 <button onclick="window.ApdaResponderDashboard.openDispatchModal('${req.id}')" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs shadow-lg shadow-amber-900/50 flex items-center gap-1.5 animate-pulse">
                   <span>🚒</span> DEPLOY RESPONSE UNITS
@@ -441,15 +446,12 @@ window.ApdaResponderDashboard = {
                   <p class="text-[11px] text-slate-400">Skills: ${req.assignedResponder.skills?.join(', ')} • Contact: ${req.assignedResponder.phone || 'Available'}</p>
                 </div>
               </div>
-              <span class="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 font-bold text-xs">Assigned • ETA ~${req.assignedResponder.etaMinutes || 5}m</span>
+              <span class="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 font-bold text-xs">${String(req.status || 'Volunteer Responding').replace('Volunteer ', '')} • ETA ~${req.assignedResponder.etaMinutes || 5}m</span>
             </div>
           ` : eligibleMatches.length > 0 ? `
             <div class="mt-3 space-y-2">
-              <div class="flex items-center justify-between">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nearby Verified Responders</p>
-                <span class="text-[10px] font-bold text-emerald-400">${eligibleMatches.length} Nearby</span>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[240px] overflow-y-auto pr-1">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nearby Verified Responders</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 ${eligibleMatches.map(m => `
                   <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-2">
                     <div>
@@ -458,45 +460,36 @@ window.ApdaResponderDashboard = {
                         <span class="font-bold text-xs text-white">${m.volunteer.name}</span>
                         <span class="text-[9px] text-emerald-400 font-bold">✓</span>
                       </div>
-                      <p class="text-[10px] text-slate-400">📍 ${m.distanceKm} km • ⏱️ ETA ${m.etaMinutes} min</p>
-                      <p class="text-[10px] text-slate-500 truncate max-w-[140px]">${m.volunteer.skills.slice(0, 2).join(', ')}</p>
+                      <p class="text-[10px] text-slate-400">📍 ${m.distanceKm} km • ⏱️ ~${m.etaMinutes}m • ${m.volunteer.skills.slice(0, 2).join(', ')}</p>
                     </div>
-                    <button onclick="window.ApdaState.assignVolunteer('${req.id}', '${m.volunteer.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] transition-colors flex-shrink-0">
-                      Assign →
-                    </button>
                   </div>
                 `).join('')}
               </div>
-              <button onclick="window.ApdaState.scrambleNearbyVolunteers('${req.id}')" class="w-full mt-2 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-[11px] uppercase tracking-wider shadow-md flex items-center justify-center gap-1.5 transition-colors">
-                🚨 SCRAMBLE VOLUNTEERS
-              </button>
             </div>
           ` : `
-            <div class="mt-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col gap-3">
-              <span class="text-slate-400 text-xs">0 eligible verified volunteers within ${rules.radiusKm} km radius with required capabilities. No eligible verified volunteers are currently available within the response radius.</span>
-              <div class="flex flex-wrap items-center gap-2">
-                <button onclick="window.ApdaState.scrambleNearbyVolunteers('${req.id}')" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-md">
-                  🚨 SCRAMBLE VOLUNTEERS
+            <div class="mt-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-slate-400 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span>0 eligible verified volunteers within ${rules.radiusKm} km radius with required capabilities. No eligible verified volunteers are currently available within the response radius.</span>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <button onclick="window.ApdaState.scrambleNearbyVolunteers('${req.id}')" class="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-[11px]">
+                  🚨 Scramble Volunteers
                 </button>
                 ${!isDispatched ? `
-                  <button onclick="window.ApdaResponderDashboard.openDispatchModal('${req.id}')" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-black text-[11px] uppercase shadow-md flex items-center gap-1.5">
-                    DEPLOY UNITS →
+                  <button onclick="window.ApdaResponderDashboard.openDispatchModal('${req.id}')" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-[11px]">
+                    Deploy Units →
                   </button>
                 ` : ''}
               </div>
             </div>
           `}
 
-        </div>
-        ` : ''}
+        </div>` : ''}
 
         <!-- Multi-Agency Response Options (Parts 5 & 6) -->
-        ${responseOptions.length > 0 ? `
-        <div class="mt-4 pt-3 border-t border-white/5">
+        ${window.ApdaState.isIncidentActive(req) ? `<div class="mt-4 pt-3 border-t border-white/5">
           <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">Multi-Agency Response Coordination Options</span>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            ${responseOptions.map(opt => `
-              <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 flex flex-col justify-between gap-2">
+            ${responseOptions.filter(opt => opt.category !== 'volunteers').map(opt => `
+              <div class="response-option-card p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between gap-2">
                 <div>
                   <div class="flex items-center justify-between gap-1 mb-1">
                     <span class="text-xs font-bold text-white flex items-center gap-1.5">
@@ -516,8 +509,7 @@ window.ApdaResponderDashboard = {
               </div>
             `).join('')}
           </div>
-        </div>
-        ` : ''}
+        </div>` : ''}
 
         <!-- Incident Actions Footer -->
         <div class="mt-4 pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -545,11 +537,9 @@ window.ApdaResponderDashboard = {
                 <span class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold">
                   ✓ ${req.assignedTeam?.name || 'Unit Dispatched'}
                 </span>
-                ${window.ApdaState.isIncidentActive(req) ? `
                 <button onclick="window.ApdaState.updateRequestStatus('${req.id}', 'Resolved', 'Evacuation and rescue completed safely by response unit.')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition-all">
                   Mark Resolved ✓
                 </button>
-                ` : ''}
               </div>
             ` : ''}
           </div>

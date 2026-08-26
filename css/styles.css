@@ -1227,6 +1227,7 @@ body:not(.high-contrast) :is([class*="to-cyan"], [class*="to-sky"], [class*="to-
 
 /* [volunteer done] Minimalist Volunteer Demo Dropdown Styling */
 .volunteer-dropdown-menu {
+  max-height: min(300px, calc(100vh - 18rem));
   scrollbar-width: thin;
   scrollbar-color: #334155 #0f172a;
 }
@@ -1236,6 +1237,22 @@ body:not(.high-contrast) :is([class*="to-cyan"], [class*="to-sky"], [class*="to-
 .volunteer-dropdown-menu::-webkit-scrollbar-thumb {
   background: #334155;
   border-radius: 4px;
+}
+
+/* Command response options share one visual language and a restrained lift. */
+.response-card,
+.response-card .response-option-card {
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.response-card:hover,
+.response-card .response-option-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(251, 191, 36, .52);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, .3), 0 0 22px rgba(245, 158, 11, .09);
+}
+@media (hover: none) {
+  .response-card:hover,
+  .response-card .response-option-card:hover { transform: none; }
 }
 
 /* ========================================

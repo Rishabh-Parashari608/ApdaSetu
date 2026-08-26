@@ -1,5 +1,5 @@
 // Service Worker for ApdaSetu Offline Safety Guides and Critical Alerts
-const CACHE_NAME = 'apdasetu-v2.2.0';
+const CACHE_NAME = 'apdasetu-v2.3.0';
 const OFFLINE_URLS = [
   './',
   './index.html',
@@ -27,7 +27,8 @@ const OFFLINE_URLS = [
   './js/components/safety-guides.js',
   './js/components/community-updates.js',
   './js/components/profile-settings.js',
-  './js/components/responder-dashboard.js'
+  './js/components/responder-dashboard.js',
+  './js/components/volunteer-dashboard.js'
 ];
 
 self.addEventListener('install', (event) => {

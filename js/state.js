@@ -33,17 +33,11 @@ window.ApdaState = {
   },
 
   loadStateFromStorage() {
-    const savedUser = localStorage.getItem('apdasetu_user');
-    if (savedUser) {
-      try {
-        this.currentUser = JSON.parse(savedUser);
-      } catch (e) {
-        this.currentUser = null;
-        localStorage.removeItem('apdasetu_user');
-      }
-    } else {
-      this.currentUser = null;
-    }
+    // Demo data may persist, but an authenticated persona must always be chosen
+    // explicitly for each new application load.
+    this.currentUser = null;
+    this.currentView = 'home';
+    localStorage.removeItem('apdasetu_user');
 
     const savedRequests = localStorage.getItem('apdasetu_requests');
     if (savedRequests) {
@@ -69,6 +63,7 @@ window.ApdaState = {
         const network = JSON.parse(savedVolunteerNetwork);
         this.volunteers = network.volunteers || [...window.ApdaSeedData.volunteers];
         this.volunteerMobilizations = network.mobilizations || [];
+        if (Array.isArray(network.requests)) this.requests = network.requests;
       } catch (e) {
         this.volunteers = [...window.ApdaSeedData.volunteers];
       }
@@ -109,7 +104,7 @@ window.ApdaState = {
 
   // [volunteer done] Persist a compact network snapshot and notify every open application tab.
   syncVolunteerNetwork() {
-    const payload = { type: 'volunteer-network', updatedAt: Date.now(), volunteers: this.volunteers, mobilizations: this.volunteerMobilizations };
+    const payload = { type: 'volunteer-network', updatedAt: Date.now(), volunteers: this.volunteers, mobilizations: this.volunteerMobilizations, requests: this.requests };
     localStorage.setItem('apdasetu_volunteer_network', JSON.stringify(payload));
     if (this.volunteerSyncChannel) this.volunteerSyncChannel.postMessage(payload);
   },
@@ -119,6 +114,8 @@ window.ApdaState = {
     if (!payload || payload.type !== 'volunteer-network') return;
     this.volunteers = payload.volunteers || this.volunteers;
     this.volunteerMobilizations = payload.mobilizations || this.volunteerMobilizations;
+    this.requests = Array.isArray(payload.requests) ? payload.requests : this.requests;
+    this.saveRequests();
     this.emitChange();
   },
 
@@ -588,30 +585,42 @@ window.ApdaState = {
     }
     target.status = status;
     target.updatedAt = Date.now();
+    const req = this.requests.find(r => r.id === mobilization.requestId);
+    const statusDetails = {
+      accepted: ['Volunteer Responding', `Verified volunteer ${volunteer.name} accepted the request and is responding.`],
+      on_the_way: ['Volunteer On The Way', `Verified volunteer ${volunteer.name} is on the way. ETA ~${target.etaMinutes || 5} mins.`],
+      on_site: ['Volunteer Arrived', `Verified volunteer ${volunteer.name} arrived at the incident site.`],
+      completed: ['Volunteer Assistance Completed', `Verified volunteer ${volunteer.name} completed assistance.`],
+      declined: ['Volunteer Declined', `Verified volunteer ${volunteer.name} declined the request.`]
+    };
 
     if (status === 'accepted') {
       target.acceptedAt = target.updatedAt;
       if (!volunteer.activeServiceStartedAt) volunteer.activeServiceStartedAt = target.updatedAt;
-      const req = this.requests.find(r => r.id === mobilization.requestId);
-      if (req && req.status !== 'Resolved') {
-        req.status = 'Volunteer Assigned';
+      if (req && this.isIncidentActive(req)) {
+        req.status = 'Volunteer Responding';
         req.assignedResponder = {
           id: volunteer.id,
           name: volunteer.name,
           phone: volunteer.phone,
           skills: volunteer.skills,
-          etaMinutes: target.etaMinutes || 5
+          distanceKm: target.distanceKm,
+          etaMinutes: target.etaMinutes || 5,
+          volunteerStatus: status
         };
       }
+    }
+    if (status === 'on_the_way' && req && this.isIncidentActive(req)) {
+      req.status = 'Volunteer On The Way';
+      if (req.assignedResponder) req.assignedResponder.volunteerStatus = status;
     }
     if (status === 'on_site') {
       mobilization.groundConfirmedBy = { id: volunteer.id, name: volunteer.name, verified: true, at: target.updatedAt };
       mobilization.status = 'ground_confirmed';
-      const req = this.requests.find(r => r.id === mobilization.requestId);
       if (req) {
-        req.status = 'Ground Confirmed';
+        req.status = 'Volunteer Arrived';
         req.groundConfirmedBy = { id: volunteer.id, name: volunteer.name, phone: volunteer.phone, verified: true, at: 'Just now' };
-        req.timeline.unshift({ time: 'Just now', status: 'Ground Confirmed', note: `Verified volunteer ${volunteer.name} confirmed arrival on site.` });
+        if (req.assignedResponder) req.assignedResponder.volunteerStatus = status;
       }
     }
     if (status === 'completed') {
@@ -624,6 +633,15 @@ window.ApdaState = {
       volunteer.peopleAssisted += 1;
       volunteer.responseHistory.unshift(`Completed ${mobilization.severity} assistance · ${mobilization.incidentAddress}`);
       mobilization.status = mobilization.targets.some(t => !['completed', 'declined'].includes(t.status)) ? mobilization.status : 'completed';
+      if (req && this.isIncidentActive(req)) {
+        req.status = 'Volunteer Assistance Completed';
+        if (req.assignedResponder) req.assignedResponder.volunteerStatus = status;
+      }
+    }
+    if (req && statusDetails[status]) {
+      const [timelineStatus, note] = statusDetails[status];
+      req.timeline = req.timeline || [];
+      req.timeline.unshift({ time: 'Just now', status: timelineStatus, note });
     }
 
     this.saveRequests();
