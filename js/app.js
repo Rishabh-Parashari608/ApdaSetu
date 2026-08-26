@@ -79,11 +79,13 @@ window.ApdaApp = {
           </main>
         </div>
       </div>
-      ${window.ApdaEmergencyAssistant.renderWidget()}
+      ${currentView !== 'responder' ? window.ApdaEmergencyAssistant.renderWidget() : ''}
     `;
 
     this.observeRevealElements();
-    window.ApdaEmergencyAssistant.initDrag();
+    if (currentView !== 'responder') {
+      window.ApdaEmergencyAssistant.initDrag();
+    }
     window.ApdaI18n.translateDocument(appContainer);
 
     // Reset homepage graph state when navigating away so graph hides on re-entry

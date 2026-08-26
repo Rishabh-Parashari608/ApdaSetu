@@ -133,14 +133,16 @@ window.ApdaState = {
     return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   },
 
-  // [volunteer done] Severity-specific volunteer radius and decision window.
+  // [volunteer done] Severity-specific volunteer radius and decision window (2-minute window per requirements).
   getVolunteerRules(severity) {
-    return ({ critical: { radiusKm: 5, windowMinutes: 5 }, high: { radiusKm: 6, windowMinutes: 7 }, medium: { radiusKm: 10, windowMinutes: 10 } })[String(severity).toLowerCase()] || { radiusKm: 10, windowMinutes: 10 };
+    const sev = String(severity || '').toLowerCase();
+    const radiusKm = sev === 'critical' ? 5 : sev === 'high' ? 6 : 10;
+    return { radiusKm, windowMinutes: 2, windowSeconds: 120 };
   },
 
   // [volunteer done] ETA is deliberately labelled as an estimate, based on local response travel assumptions.
   estimateVolunteerEta(distanceKm) {
-    return Math.max(3, Math.ceil((distanceKm || 0) / 0.47));
+    return Math.max(2, Math.ceil((distanceKm || 0) / 0.45));
   },
 
   // [volunteer done] A 12-hour shift cap protects availability while preserving total historical hours served.
@@ -152,46 +154,391 @@ window.ApdaState = {
     return { maxHours, usedHours, remainingHours, percent: Math.min(100, Math.round((usedHours / maxHours) * 100)), reached: usedHours >= maxHours, warning: remainingHours <= 1 ? '1 HOUR REMAINING' : remainingHours <= 2 ? '2 HOURS REMAINING' : '' };
   },
 
-  // [volunteer done] New targeting excludes verified volunteers who are offline or at the service cap.
+  // [volunteer done] Base eligibility: verified, available, and within service limit.
   isVolunteerEligible(volunteer) {
     return Boolean(volunteer?.verified && volunteer.availability === 'available' && !this.getVolunteerServiceInfo(volunteer).reached);
   },
 
-  // [volunteer done] Commander creates one targeted request per incident; only verified, available volunteers qualify.
+  // Disaster type & requirements to relevant skills mapping
+  getRequiredSkillsForIncident(disasterType, description = '') {
+    const text = String(description || '').toLowerCase();
+    const type = String(disasterType || '').toLowerCase();
+    const skills = new Set();
+
+    if (type === 'flood' || text.includes('water') || text.includes('drown') || text.includes('boat')) {
+      skills.add('Boat handling');
+      skills.add('Water rescue');
+      skills.add('First aid');
+      skills.add('Elderly evacuation');
+    }
+    if (type === 'cyclone' || text.includes('wind') || text.includes('roof')) {
+      skills.add('Water rescue');
+      skills.add('Radio coordination');
+      skills.add('First aid');
+      skills.add('Elderly evacuation');
+    }
+    if (type === 'landslide' || type === 'earthquake' || text.includes('boulder') || text.includes('debris') || text.includes('collapse')) {
+      skills.add('Rope rescue');
+      skills.add('Terrain navigation');
+      skills.add('First aid');
+    }
+    if (type === 'forest_fire' || text.includes('fire') || text.includes('smoke')) {
+      skills.add('Terrain navigation');
+      skills.add('First aid');
+      skills.add('Elderly evacuation');
+    }
+    if (text.includes('injur') || text.includes('cut') || text.includes('bleed') || text.includes('infant') || text.includes('elderly') || text.includes('medicine')) {
+      skills.add('First aid');
+      skills.add('Triage');
+      skills.add('Child care');
+      skills.add('Elderly evacuation');
+    }
+    return Array.from(skills);
+  },
+
+  // Incident-specific volunteer eligibility check
+  isVolunteerEligibleForIncident(volunteer, request) {
+    if (!this.isVolunteerEligible(volunteer)) return false;
+    if (!request || !request.coordinates || !volunteer.coordinates) return false;
+
+    const rules = this.getVolunteerRules(request.severity);
+    const distanceKm = this.calculateDistanceKm(volunteer.coordinates, request.coordinates);
+    if (distanceKm === null || distanceKm > rules.radiusKm) return false;
+
+    const requiredSkills = this.getRequiredSkillsForIncident(request.disasterType, request.description);
+    if (requiredSkills.length > 0 && Array.isArray(volunteer.skills)) {
+      const hasMatchingSkill = volunteer.skills.some(skill =>
+        requiredSkills.some(reqSkill =>
+          reqSkill.toLowerCase() === skill.toLowerCase() ||
+          skill.toLowerCase().includes(reqSkill.toLowerCase()) ||
+          reqSkill.toLowerCase().includes(skill.toLowerCase())
+        )
+      );
+      if (!hasMatchingSkill) return false;
+    }
+    return true;
+  },
+
+  // Returns actual eligible volunteers for an incident with exact calculated distances
+  getEligibleVolunteersForIncident(request) {
+    if (!request || !request.coordinates) return [];
+    return this.volunteers
+      .filter(v => this.isVolunteerEligibleForIncident(v, request))
+      .map(v => {
+        const dist = this.calculateDistanceKm(v.coordinates, request.coordinates);
+        return {
+          volunteer: v,
+          volunteerId: v.id,
+          distanceKm: Number((dist || 0).toFixed(1)),
+          etaMinutes: this.estimateVolunteerEta(dist)
+        };
+      })
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+  },
+
+  // Incident Lifecycle & Active Status Helpers
+  isIncidentActive(request) {
+    if (!request) return false;
+    const status = String(request.status || '').toLowerCase();
+    return !['resolved', 'closed', 'rejected'].includes(status);
+  },
+
+  // Returns all active incidents sorted by priority
+  getActiveRequests() {
+    return this.requests
+      .filter(r => this.isIncidentActive(r))
+      .sort((a, b) => {
+        const aRisk = Number(a.aiScore?.riskScore) || 0;
+        const bRisk = Number(b.aiScore?.riskScore) || 0;
+        const aCrit = a.severity === 'critical' ? 200 : 0;
+        const bCrit = b.severity === 'critical' ? 200 : 0;
+        const aGC = a.groundConfirmedBy ? 50 : 0;
+        const bGC = b.groundConfirmedBy ? 50 : 0;
+        const aPeople = (Number(a.peopleAffected) || 1) * 2;
+        const bPeople = (Number(b.peopleAffected) || 1) * 2;
+        return (bCrit + bRisk + bGC + bPeople) - (aCrit + aRisk + aGC + aPeople);
+      });
+  },
+
+  // Returns resolved & closed historical incidents
+  getResolvedRequests() {
+    return this.requests.filter(r => ['resolved', 'closed'].includes(String(r.status || '').toLowerCase()));
+  },
+
+  // Get tailored multi-agency response options for an incident
+  getIncidentResponseOptions(request) {
+    if (!request || !this.isIncidentActive(request)) return [];
+    const text = String(request.description || '').toLowerCase();
+    const type = String(request.disasterType || '').toLowerCase();
+    const eligibleVolunteers = this.getEligibleVolunteersForIncident(request);
+    const rules = this.getVolunteerRules(request.severity);
+    const options = [];
+
+    // 1. Nearby Verified Volunteers Option
+    options.push({
+      id: 'opt-volunteers',
+      category: 'volunteers',
+      title: 'Nearby Verified Volunteers',
+      icon: '🦺',
+      badge: eligibleVolunteers.length ? `${eligibleVolunteers.length} Available` : '0 Nearby',
+      badgeType: eligibleVolunteers.length ? 'success' : 'warning',
+      description: eligibleVolunteers.length
+        ? `${eligibleVolunteers.length} verified volunteer(s) within ${rules.radiusKm} km radius with needed skills.`
+        : `0 eligible verified volunteers within ${rules.radiusKm} km response radius. Escalation available.`,
+      volunteers: eligibleVolunteers,
+      actionLabel: eligibleVolunteers.length ? `🚨 Scramble Volunteers (${eligibleVolunteers.length})` : '🚨 Scramble Volunteers',
+      actionType: 'volunteer_scramble'
+    });
+
+    // 2. Medical / Trauma Response Option
+    const hasMedicalNeed = Boolean(
+      (request.vulnerable && (request.vulnerable.injured > 0 || request.vulnerable.elderly > 0 || request.vulnerable.infants > 0)) ||
+      text.includes('injur') || text.includes('cut') || text.includes('bleed') || text.includes('asthma') || text.includes('medicine') || text.includes('cardiac')
+    );
+    const medUnit = this.rescueUnits.find(u => u.agency === 'Medical' && u.status === 'Available') || this.rescueUnits.find(u => u.agency === 'Medical');
+    if (hasMedicalNeed || type === 'medical' || request.severity === 'critical') {
+      options.push({
+        id: 'opt-medical',
+        category: 'medical',
+        title: 'Emergency Medical & Trauma Ambulance',
+        icon: '🚑',
+        badge: medUnit ? medUnit.status : 'On Standby',
+        badgeType: medUnit?.status === 'Available' ? 'success' : 'warning',
+        description: medUnit ? `${medUnit.name} (${medUnit.leader}) • ALS Defibrillator & ICU gear` : '108 Advanced Life Support Trauma Unit',
+        unit: medUnit,
+        actionLabel: medUnit?.status === 'Available' ? 'Deploy Medical Team' : 'Medical Unit Assigned',
+        actionType: 'deploy_unit',
+        unitId: medUnit?.id
+      });
+    }
+
+    // 3. Search & Rescue / Raft / Boat Unit Option
+    const isWater = type === 'flood' || type === 'cyclone' || text.includes('water') || text.includes('drown') || text.includes('boat') || text.includes('roof');
+    const isMountain = type === 'landslide' || type === 'earthquake' || text.includes('boulder') || text.includes('debris') || text.includes('collapse');
+    
+    if (isWater) {
+      const raftUnit = this.rescueUnits.find(u => (u.type.includes('Boat') || u.type.includes('Water') || u.id === 'TEAM-NDRF-04' || u.id === 'TEAM-ODRAF-01') && u.status === 'Available') || this.rescueUnits.find(u => u.type.includes('Boat'));
+      options.push({
+        id: 'opt-rescue-raft',
+        category: 'rescue',
+        title: 'NDRF / SDRF Inflatable Powerboat Unit',
+        icon: '🚤',
+        badge: raftUnit ? raftUnit.status : 'Standby',
+        badgeType: raftUnit?.status === 'Available' ? 'success' : 'warning',
+        description: raftUnit ? `${raftUnit.name} • Gemini Inflatable Boats & Life Jackets` : 'High-capacity watercraft rescue unit',
+        unit: raftUnit,
+        actionLabel: raftUnit?.status === 'Available' ? 'Deploy Raft Unit' : 'Unit Assigned',
+        actionType: 'deploy_unit',
+        unitId: raftUnit?.id
+      });
+    }
+
+    if (isMountain) {
+      const heavyUnit = this.rescueUnits.find(u => (u.type.includes('Search') || u.type.includes('Mountain') || u.id === 'TEAM-SDRF-03' || u.id === 'TEAM-NDRF-08') && u.status === 'Available') || this.rescueUnits.find(u => u.type.includes('Search'));
+      options.push({
+        id: 'opt-rescue-heavy',
+        category: 'rescue',
+        title: 'SDRF / NDRF Mountain & Heavy USAR Unit',
+        icon: '🧗',
+        badge: heavyUnit ? heavyUnit.status : 'Standby',
+        badgeType: heavyUnit?.status === 'Available' ? 'success' : 'warning',
+        description: heavyUnit ? `${heavyUnit.name} • Rope Rigging & Hydraulic Life Detectors` : 'Mountain rescue & debris search squad',
+        unit: heavyUnit,
+        actionLabel: heavyUnit?.status === 'Available' ? 'Deploy USAR Unit' : 'Unit Assigned',
+        actionType: 'deploy_unit',
+        unitId: heavyUnit?.id
+      });
+    }
+
+    // 4. Fire & Emergency Unit Option
+    const isFire = type === 'forest_fire' || text.includes('fire') || text.includes('smoke') || text.includes('burn') || text.includes('spark');
+    if (isFire) {
+      const fireUnit = this.rescueUnits.find(u => (u.agency === 'Fire Brigade' || u.id === 'TEAM-FIRE-01' || u.id === 'TEAM-FIRE-02') && u.status === 'Available') || this.rescueUnits.find(u => u.agency === 'Fire Brigade');
+      options.push({
+        id: 'opt-fire',
+        category: 'fire',
+        title: 'Fire & Wildfire Emergency Tender',
+        icon: '🚒',
+        badge: fireUnit ? fireUnit.status : 'Standby',
+        badgeType: fireUnit?.status === 'Available' ? 'success' : 'warning',
+        description: fireUnit ? `${fireUnit.name} • Water Cannons & Smoke Respirators` : 'State Fire & Rescue Tender',
+        unit: fireUnit,
+        actionLabel: fireUnit?.status === 'Available' ? 'Deploy Fire Tender' : 'Unit Assigned',
+        actionType: 'deploy_unit',
+        unitId: fireUnit?.id
+      });
+    }
+
+    // 5. Evacuation & Relief Support Option
+    const evacUnit = this.rescueUnits.find(u => u.id === 'TEAM-CIVIL-09' || u.agency === 'NGO / Red Cross' || u.id === 'TEAM-AIR-01') || this.rescueUnits[0];
+    options.push({
+      id: 'opt-evac',
+      category: 'evacuation',
+      title: 'Evacuation & Relief Pouch Support',
+      icon: '🛟',
+      badge: evacUnit?.status || 'Available',
+      badgeType: 'info',
+      description: 'Civil Defense & Red Cross dry ration, potable water & safe shelter transit.',
+      unit: evacUnit,
+      actionLabel: 'Deploy Evacuation Unit',
+      actionType: 'deploy_unit',
+      unitId: evacUnit?.id
+    });
+
+    return options;
+  },
+
+  // Ground volunteer confirmation: triggers immediate response coordination & starts 2-min window
+  confirmGroundArrival(requestId, volunteerId) {
+    const request = this.requests.find(r => r.id === requestId);
+    const volunteer = this.volunteers.find(v => v.id === volunteerId) || this.volunteers[0];
+    if (!request) return;
+
+    request.status = 'Ground Confirmed';
+    request.groundConfirmedBy = {
+      id: volunteer.id,
+      name: volunteer.name,
+      phone: volunteer.phone,
+      verified: true,
+      at: 'Just now',
+      timestamp: Date.now()
+    };
+
+    request.timeline.unshift({
+      time: 'Just now',
+      status: 'Ground Confirmed',
+      note: `Verified volunteer ${volunteer.name} arrived on site and confirmed emergency situation.`
+    });
+
+    // Start 2-minute volunteer response window for this incident
+    this.mobilizeNearbyVolunteers(requestId, { scramble: true });
+
+    this.saveRequests();
+    this.syncVolunteerNetwork();
+    this.notify(`GROUND CONFIRMED by verified volunteer ${volunteer.name}. Response coordination active.`, 'success');
+    if (window.ApdaSoundEngine) window.ApdaSoundEngine.playChime('sos');
+    this.emitChange();
+  },
+
+  // Assign a verified volunteer directly as the responder
+  assignVolunteer(requestId, volunteerId, customNote = '') {
+    const request = this.requests.find(r => r.id === requestId);
+    const volunteer = this.volunteers.find(v => v.id === volunteerId);
+    if (!request || !volunteer) return;
+
+    const dist = request.coordinates ? this.calculateDistanceKm(volunteer.coordinates, request.coordinates) : 1.0;
+    const eta = this.estimateVolunteerEta(dist);
+
+    request.status = 'Volunteer Assigned';
+    request.assignedResponder = {
+      id: volunteer.id,
+      name: volunteer.name,
+      phone: volunteer.phone,
+      skills: volunteer.skills,
+      distanceKm: dist ? Number(dist.toFixed(1)) : 1.0,
+      etaMinutes: eta,
+      assignedAt: 'Just now'
+    };
+
+    request.timeline.unshift({
+      time: 'Just now',
+      status: 'Volunteer Assigned',
+      note: customNote || `Verified volunteer ${volunteer.name} accepted task (${volunteer.skills.join(', ')}). ETA ~${eta} mins.`
+    });
+
+    // Mark active mobilization as accepted/in_progress, stopping countdown
+    const mobilization = this.volunteerMobilizations.find(m => m.requestId === requestId);
+    if (mobilization) {
+      mobilization.status = 'volunteer_assigned';
+      const target = mobilization.targets.find(t => t.volunteerId === volunteerId);
+      if (target) target.status = 'accepted';
+    }
+
+    if (this.currentUser && this.currentUser.id === volunteerId && window.ApdaSoundEngine) {
+      window.ApdaSoundEngine.stopEmergencySiren();
+    }
+
+    this.saveRequests();
+    this.syncVolunteerNetwork();
+    this.notify(`Volunteer ${volunteer.name} ASSIGNED to Incident ${requestId}!`, 'success');
+    if (window.ApdaSoundEngine) window.ApdaSoundEngine.playChime('success');
+    this.emitChange();
+  },
+
+  // Mobilize nearby verified volunteers for an incident (2-minute window)
   mobilizeNearbyVolunteers(requestId, options = {}) {
     const request = this.requests.find(r => r.id === requestId);
     if (!request || !request.coordinates) {
       this.notify('Volunteer mobilization needs a valid incident location.', 'warning');
       return;
     }
-    const existing = this.volunteerMobilizations.find(m => m.requestId === requestId && !['completed', 'escalated', 'resolved'].includes(m.status)); // [volunteer done] A resolved scramble can be safely restarted for the demo.
+    const existing = this.volunteerMobilizations.find(m => m.requestId === requestId && !['completed', 'escalated', 'resolved'].includes(m.status));
     if (existing) {
-      this.notify(`Volunteer mobilization is already active for ${requestId}.`, 'info');
+      if (options.scramble && !existing.isScramble) {
+        existing.isScramble = true;
+        this.syncVolunteerNetwork();
+        this.notify(`Volunteers scrambled for ${requestId}!`, 'success');
+        this.emitChange();
+      }
       return;
     }
+
     const rules = this.getVolunteerRules(request.severity);
-    const targets = this.volunteers.filter(v => this.isVolunteerEligible(v)).map(v => {
-      const distanceKm = this.calculateDistanceKm(v.coordinates, request.coordinates);
-      return distanceKm !== null && distanceKm <= rules.radiusKm ? { volunteerId: v.id, distanceKm: Number(distanceKm.toFixed(1)), etaMinutes: this.estimateVolunteerEta(distanceKm), status: 'notified' } : null;
-    }).filter(Boolean);
+    const eligibleMatches = this.getEligibleVolunteersForIncident(request);
+    const targets = eligibleMatches.map(m => ({
+      volunteerId: m.volunteer.id,
+      distanceKm: m.distanceKm,
+      etaMinutes: m.etaMinutes,
+      status: 'notified'
+    }));
+
     const now = Date.now();
-    const mobilization = { id: `MOB-${now}`, requestId, severity: request.severity, incidentAddress: request.address, incidentCoordinates: request.coordinates, disasterType: request.disasterType, createdAt: now, expiresAt: now + rules.windowMinutes * 60000, rules, targets, status: 'notified', escalated: false, groundConfirmedBy: null, isScramble: Boolean(options.scramble) }; // [volunteer done] Flag drives the emergency scramble presentation and siren.
+    // 2-minute volunteer response window (120 seconds)
+    const mobilization = {
+      id: `MOB-${now}`,
+      requestId,
+      severity: request.severity,
+      incidentAddress: request.address,
+      incidentCoordinates: request.coordinates,
+      disasterType: request.disasterType,
+      createdAt: now,
+      expiresAt: now + (rules.windowSeconds || 120) * 1000,
+      rules,
+      targets,
+      status: targets.length ? 'notified' : 'escalated',
+      escalated: targets.length === 0,
+      groundConfirmedBy: request.groundConfirmedBy || null,
+      isScramble: Boolean(options.scramble)
+    };
+
     this.volunteerMobilizations.unshift(mobilization);
-    request.timeline.unshift({ time: 'Just now', status: 'Volunteer Mobilization', note: `${targets.length} verified nearby volunteer(s) notified within ${rules.radiusKm} km.` });
+    request.timeline.unshift({
+      time: 'Just now',
+      status: 'Volunteer Mobilization',
+      note: targets.length
+        ? `${targets.length} verified nearby volunteer(s) notified within ${rules.radiusKm} km. 2-minute response window started.`
+        : `0 eligible volunteers in ${rules.radiusKm} km. Escalated for emergency unit deployment.`
+    });
+
     this.saveRequests();
     this.syncVolunteerNetwork();
-    this.notify(`${targets.length} eligible verified volunteer(s) ${options.scramble ? 'SCRAMBLED' : 'mobilized'} for ${requestId}.`, targets.length ? 'success' : 'warning'); // [volunteer done] Distinguish the emergency action in command feedback.
+    this.notify(
+      targets.length
+        ? `${targets.length} eligible verified volunteer(s) notified for ${requestId}.`
+        : `0 eligible volunteers within ${rules.radiusKm} km for ${requestId}. Escalation ready.`,
+      targets.length ? 'success' : 'warning'
+    );
     this.emitChange();
   },
 
-  // [volunteer done] Scramble reuses the matching, sync, countdown, and escalation pipeline.
+  // Scramble nearby volunteers
   scrambleNearbyVolunteers(requestId) {
     this.mobilizeNearbyVolunteers(requestId, { scramble: true });
   },
 
-  // [volunteer done] Commander can close one scramble without affecting volunteers or any unrelated incident.
+  // Close volunteer scramble
   resolveVolunteerScramble(mobilizationId) {
-    const mobilization = this.volunteerMobilizations.find(item => item.id === mobilizationId && item.isScramble);
+    const mobilization = this.volunteerMobilizations.find(item => item.id === mobilizationId);
     if (!mobilization || mobilization.status === 'resolved') return;
     mobilization.targets.forEach(target => {
       if (!['completed', 'declined'].includes(target.status)) target.status = 'resolved';
@@ -200,16 +547,22 @@ window.ApdaState = {
     mobilization.resolvedAt = Date.now();
     const request = this.requests.find(item => item.id === mobilization.requestId);
     if (request) {
-      request.timeline.unshift({ time: 'Just now', status: 'Scramble Resolved', note: 'Command Center closed the volunteer scramble. No professional unit was dispatched.' });
+      request.timeline.unshift({
+        time: 'Just now',
+        status: 'Scramble Resolved',
+        note: 'Command Center closed the volunteer scramble.'
+      });
       this.saveRequests();
     }
-    if (this.currentUser && mobilization.targets.some(target => target.volunteerId === this.currentUser.id)) window.ApdaSoundEngine?.stopEmergencySiren();
+    if (this.currentUser && mobilization.targets.some(target => target.volunteerId === this.currentUser.id)) {
+      window.ApdaSoundEngine?.stopEmergencySiren();
+    }
     this.syncVolunteerNetwork();
     this.notify(`SCRAMBLE RESOLVED for ${mobilization.requestId}.`, 'success');
     this.emitChange();
   },
 
-  // [volunteer done] Volunteer availability controls whether the person can receive future alerts.
+  // Set volunteer availability
   setVolunteerAvailability(volunteerId, availability) {
     const volunteer = this.volunteers.find(v => v.id === volunteerId);
     if (!volunteer) return;
@@ -223,23 +576,43 @@ window.ApdaState = {
     this.emitChange();
   },
 
-  // [volunteer done] Status workflow is shared with commanders immediately, including verified ground confirmation.
+  // Status workflow update
   updateVolunteerTask(mobilizationId, volunteerId, status) {
     const mobilization = this.volunteerMobilizations.find(m => m.id === mobilizationId);
     const target = mobilization && mobilization.targets.find(t => t.volunteerId === volunteerId);
     const volunteer = this.volunteers.find(v => v.id === volunteerId);
     if (!mobilization || !target || !volunteer) return;
-    // [volunteer done] The local recipient's siren ends on accept or decline without changing other volunteers' alerts.
-    if (mobilization.isScramble && ['accepted', 'declined'].includes(status) && this.currentUser?.id === volunteerId && window.ApdaSoundEngine) window.ApdaSoundEngine.stopEmergencySiren();
+
+    if (mobilization.isScramble && ['accepted', 'declined'].includes(status) && this.currentUser?.id === volunteerId && window.ApdaSoundEngine) {
+      window.ApdaSoundEngine.stopEmergencySiren();
+    }
     target.status = status;
     target.updatedAt = Date.now();
+
     if (status === 'accepted') {
       target.acceptedAt = target.updatedAt;
-      if (!volunteer.activeServiceStartedAt) volunteer.activeServiceStartedAt = target.updatedAt; // [volunteer done] Start live service-time tracking only after task acceptance.
+      if (!volunteer.activeServiceStartedAt) volunteer.activeServiceStartedAt = target.updatedAt;
+      const req = this.requests.find(r => r.id === mobilization.requestId);
+      if (req && req.status !== 'Resolved') {
+        req.status = 'Volunteer Assigned';
+        req.assignedResponder = {
+          id: volunteer.id,
+          name: volunteer.name,
+          phone: volunteer.phone,
+          skills: volunteer.skills,
+          etaMinutes: target.etaMinutes || 5
+        };
+      }
     }
     if (status === 'on_site') {
       mobilization.groundConfirmedBy = { id: volunteer.id, name: volunteer.name, verified: true, at: target.updatedAt };
       mobilization.status = 'ground_confirmed';
+      const req = this.requests.find(r => r.id === mobilization.requestId);
+      if (req) {
+        req.status = 'Ground Confirmed';
+        req.groundConfirmedBy = { id: volunteer.id, name: volunteer.name, phone: volunteer.phone, verified: true, at: 'Just now' };
+        req.timeline.unshift({ time: 'Just now', status: 'Ground Confirmed', note: `Verified volunteer ${volunteer.name} confirmed arrival on site.` });
+      }
     }
     if (status === 'completed') {
       const serviceInfo = this.getVolunteerServiceInfo(volunteer);
@@ -252,15 +625,19 @@ window.ApdaState = {
       volunteer.responseHistory.unshift(`Completed ${mobilization.severity} assistance · ${mobilization.incidentAddress}`);
       mobilization.status = mobilization.targets.some(t => !['completed', 'declined'].includes(t.status)) ? mobilization.status : 'completed';
     }
-    const request = this.requests.find(r => r.id === mobilization.requestId);
-    if (request && status === 'on_site') request.timeline.unshift({ time: 'Just now', status: 'Ground Confirmed', note: `Verified volunteer ${volunteer.name} confirmed arrival on site.` });
+
     this.saveRequests();
     this.syncVolunteerNetwork();
-    this.notify(status === 'on_site' ? `GROUND CONFIRMED by verified volunteer ${volunteer.name}.` : `${volunteer.name}: ${status.replace('_', ' ').toUpperCase()}`, status === 'on_site' ? 'success' : 'info');
+    this.notify(
+      status === 'on_site'
+        ? `GROUND CONFIRMED by verified volunteer ${volunteer.name}.`
+        : `${volunteer.name}: ${status.replace('_', ' ').toUpperCase()}`,
+      status === 'on_site' ? 'success' : 'info'
+    );
     this.emitChange();
   },
 
-  // [volunteer done] A non-guaranteed ETA breach informs command without labelling the volunteer a failure.
+  // Check volunteer ETA
   checkVolunteerEta(mobilization, target) {
     if (!target.acceptedAt || !['accepted', 'on_the_way'].includes(target.status) || target.etaExceeded) return;
     if (Date.now() > target.acceptedAt + target.etaMinutes * 60000) {
@@ -270,16 +647,7 @@ window.ApdaState = {
     }
   },
 
-  // [volunteer done] Timeout escalates exactly once through the existing dispatchTeam path without triggering unnecessary 1-second global re-renders.
-  checkVolunteerTimeouts() {
-    this.checkVolunteerServiceLimits(); // [volunteer done] Enforce the maximum while a volunteer remains on an active task.
-    this.volunteerMobilizations.forEach(mobilization => {
-      mobilization.targets.forEach(target => this.checkVolunteerEta(mobilization, target));
-      if (Date.now() >= mobilization.expiresAt && !mobilization.groundConfirmedBy && !mobilization.escalated) this.autoEscalateVolunteerMobilization(mobilization.id);
-    });
-  },
-
-  // [volunteer done] Reaching 12 hours makes a volunteer unavailable for new alerts but never cancels an assigned task.
+  // Check volunteer service limits (12h cap)
   checkVolunteerServiceLimits() {
     let changed = false;
     this.volunteers.forEach(volunteer => {
@@ -293,33 +661,51 @@ window.ApdaState = {
     if (changed) this.syncVolunteerNetwork();
   },
 
-  // [volunteer done] localStorage lock suppresses duplicate automatic dispatch across racing browser tabs.
+  // Periodic timer check: auto-escalates when 2-minute window expires without volunteer response
+  checkVolunteerTimeouts() {
+    this.checkVolunteerServiceLimits();
+    this.volunteerMobilizations.forEach(mobilization => {
+      mobilization.targets.forEach(target => this.checkVolunteerEta(mobilization, target));
+      const hasAccepted = mobilization.targets.some(t => ['accepted', 'on_the_way', 'on_site', 'completed'].includes(t.status));
+      if (Date.now() >= mobilization.expiresAt && !hasAccepted && !mobilization.escalated && mobilization.status !== 'resolved') {
+        this.autoEscalateVolunteerMobilization(mobilization.id);
+      }
+    });
+  },
+
+  // Auto-escalation triggers ESCALATION REQUIRED state for Commander to explicitly deploy units
   autoEscalateVolunteerMobilization(mobilizationId) {
     const mobilization = this.volunteerMobilizations.find(m => m.id === mobilizationId);
-    if (!mobilization || mobilization.escalated || mobilization.groundConfirmedBy) return;
+    if (!mobilization || mobilization.escalated) return;
     const lockKey = `apdasetu_volunteer_escalation_${mobilizationId}`;
     if (localStorage.getItem(lockKey)) return;
     localStorage.setItem(lockKey, String(Date.now()));
+
     mobilization.escalated = true;
     mobilization.status = 'escalated';
-    // [volunteer done] Stop the recipient's repeating siren when its scramble window expires.
-    if (mobilization.isScramble && this.currentUser && mobilization.targets.some(target => target.volunteerId === this.currentUser.id)) window.ApdaSoundEngine?.stopEmergencySiren();
-    const request = this.requests.find(r => r.id === mobilization.requestId);
-    if (request) {
-      request.timeline.unshift({ time: 'Just now', status: 'Volunteer Response Timeout', note: 'Professional response automatically escalated after the volunteer response window.' });
-      const availableUnit = this.rescueUnits.find(unit => unit.status === 'Available');
-      if (availableUnit && request.status !== 'Dispatched') this.dispatchTeam(request.id, availableUnit.id, 'AUTO-ESCALATE: volunteer response window expired.');
-      else this.saveRequests();
+
+    if (mobilization.isScramble && this.currentUser && mobilization.targets.some(target => target.volunteerId === this.currentUser.id)) {
+      window.ApdaSoundEngine?.stopEmergencySiren();
     }
+
+    const request = this.requests.find(r => r.id === mobilization.requestId);
+    if (request && this.isIncidentActive(request)) {
+      request.timeline.unshift({
+        time: 'Just now',
+        status: 'Volunteer Response Timeout',
+        note: '2-minute volunteer response window expired without volunteer response. Commander escalation enabled.'
+      });
+      this.saveRequests();
+    }
+
     this.syncVolunteerNetwork();
-    this.notify('VOLUNTEER RESPONSE TIMEOUT — Professional response automatically escalated.', 'warning');
+    this.notify(`VOLUNTEER RESPONSE TIMEOUT for ${mobilization.requestId} — Response unit escalation enabled.`, 'warning');
     this.emitChange();
   },
-
   subscribe(fn) {
     this.subscribers.push(fn);
     return () => {
-      this.subscribers = this.subscribers.filter(s => s !== fn);
+        this.subscribers = this.subscribers.filter(s => s !== fn);
     };
   },
 
@@ -384,6 +770,9 @@ window.ApdaState = {
 
   setResponderTab(tabName) {
     this.responderTab = tabName;
+    if (window.ApdaResponderDashboard) {
+      window.ApdaResponderDashboard.activeTab = tabName;
+    }
     this.emitChange();
   },
 
@@ -502,15 +891,29 @@ window.ApdaState = {
         note: note || `Status updated to ${newStatus}`
       });
 
-      if (newStatus === 'Resolved' && req.assignedTeam) {
-        const unit = this.rescueUnits.find(u => u.id === req.assignedTeam.id);
-        if (unit) {
-          unit.status = 'Available';
-          unit.assignedTo = null;
+      if (['Resolved', 'Closed'].includes(newStatus)) {
+        if (req.assignedTeam) {
+          const unit = this.rescueUnits.find(u => u.id === req.assignedTeam.id);
+          if (unit) {
+            unit.status = 'Available';
+            unit.assignedTo = null;
+          }
+        }
+        const mobilization = this.volunteerMobilizations.find(m => m.requestId === requestId && m.status !== 'resolved');
+        if (mobilization) {
+          mobilization.status = 'resolved';
+          mobilization.resolvedAt = Date.now();
+          mobilization.targets.forEach(t => {
+            if (!['completed', 'declined'].includes(t.status)) t.status = 'resolved';
+          });
+        }
+        if (window.ApdaSoundEngine) {
+          window.ApdaSoundEngine.stopEmergencySiren();
         }
       }
 
       this.saveRequests();
+      this.syncVolunteerNetwork();
       this.notify(`Incident ${requestId} status updated: ${newStatus}`, 'info');
       this.emitChange();
     }

@@ -223,24 +223,21 @@ window.ApdaSeedData = {
         clusterCount: 4, // 4 reports within 800m
         aiNotes: 'High urgency NLP match + visual water level verification + vulnerable infant/elderly flag. Top priority dispatch.'
       },
-      status: 'Dispatched', // Submitted -> Verified -> Dispatched -> In Progress -> Resolved
-      assignedTeam: {
-        id: 'TEAM-NDRF-04',
-        name: 'NDRF 1st Bn Quick Response Raft Unit #4',
-        leader: 'Sub-Inspector R.K. Bordoloi',
-        phone: '+91 94350 99881',
-        vehicle: 'High-Power Gemini Inflatable Motorboat (Capacity: 12)',
-        equipment: ['Rafts', 'Life Jackets', 'Pediatric First Aid Kit', 'Trauma Kit'],
-        currentLocation: [26.1420, 91.7410],
-        etaMinutes: 8,
-        dispatchedAt: '12 mins ago'
+      status: 'Resolved', // Submitted -> Verified -> Ground Confirmed -> Dispatched -> In Progress -> Resolved
+      assignedTeam: null,
+      groundConfirmedBy: {
+        id: 'VLT-001',
+        name: 'Rupam Saikia',
+        verified: true,
+        at: '15 mins ago'
       },
-      submittedAt: '22 mins ago',
+      submittedAt: '28 mins ago',
       timeline: [
-        { time: '22 mins ago', status: 'Submitted', note: 'SOS reported by citizen via mobile app' },
-        { time: '19 mins ago', status: 'AI Verified', note: 'AI Confidence 94%, Risk Score 92. Auto-escalated to priority 1' },
-        { time: '14 mins ago', status: 'Verified by Responder', note: 'Approved by NDRF Duty Commander Rajesh Kumar' },
-        { time: '12 mins ago', status: 'Dispatched', note: 'NDRF Raft Unit #4 dispatched from Dispur Base (ETA 8 mins)' }
+        { time: '28 mins ago', status: 'Submitted', note: 'SOS reported by citizen via mobile app' },
+        { time: '25 mins ago', status: 'AI Verified', note: 'AI Confidence 94%, Risk Score 92. Auto-escalated to priority 1' },
+        { time: '20 mins ago', status: 'Ground Confirmed', note: 'Verified volunteer Rupam Saikia arrived on site and verified distress' },
+        { time: '14 mins ago', status: 'Dispatched', note: 'NDRF Raft Unit #4 dispatched from Dispur Base' },
+        { time: '5 mins ago', status: 'Resolved', note: 'Rooftop rescue completed safely. All 6 citizens evacuated to Kamrup Relief Hub.' }
       ]
     },
     {
@@ -264,13 +261,20 @@ window.ApdaSeedData = {
         clusterCount: 7,
         aiNotes: 'Structural collapse risk + multiple active injuries. Requires medical trauma support.'
       },
-      status: 'Verified',
+      status: 'Ground Confirmed',
+      groundConfirmedBy: {
+        id: 'VLT-003',
+        name: 'Aarav Mishra',
+        verified: true,
+        at: '2 mins ago'
+      },
       assignedTeam: null,
       submittedAt: '14 mins ago',
       timeline: [
         { time: '14 mins ago', status: 'Submitted', note: 'Citizen emergency alert logged' },
         { time: '11 mins ago', status: 'AI Verified', note: 'AI Risk 89 (Critical Injury & Structural Risk)' },
-        { time: '6 mins ago', status: 'Verified by Responder', note: 'Triage approved. Ready for multi-agency ambulance & ODRAF dispatch.' }
+        { time: '6 mins ago', status: 'Verified by Responder', note: 'Triage approved. Ready for multi-agency ambulance & ODRAF dispatch.' },
+        { time: '2 mins ago', status: 'Ground Confirmed', note: 'Verified volunteer Aarav Mishra confirmed on ground. 2 critical trauma casualties.' }
       ]
     },
     {
@@ -323,24 +327,13 @@ window.ApdaSeedData = {
         clusterCount: 5,
         aiNotes: 'Severe respiratory hazard detected. Forest Fire unit & Ambulance dispatch recommended.'
       },
-      status: 'In Progress',
-      assignedTeam: {
-        id: 'TEAM-FIRE-02',
-        name: 'Uttarakhand Fire & Rescue Rapid Evacuation Unit',
-        leader: 'Officer Surendra Negi',
-        phone: '+91 94120 11999',
-        vehicle: 'All-Terrain 4x4 Emergency Fire Tender + Oxygen Unit',
-        equipment: ['Oxygen Cylinders', 'Smoke Respirators', 'Water Misting Cannons'],
-        currentLocation: [29.3810, 79.4620],
-        etaMinutes: 4,
-        dispatchedAt: '18 mins ago'
-      },
+      status: 'Verified',
+      assignedTeam: null,
       submittedAt: '35 mins ago',
       timeline: [
         { time: '35 mins ago', status: 'Submitted', note: 'Citizen emergency alert' },
         { time: '30 mins ago', status: 'AI Verified', note: 'High smoke asphyxiation risk' },
-        { time: '22 mins ago', status: 'Dispatched', note: 'Fire Brigade Unit #2 deployed' },
-        { time: '5 mins ago', status: 'In Progress', note: 'Rescue team on scene creating safety corridor' }
+        { time: '15 mins ago', status: 'Verified by Responder', note: 'Command triage approved. No local volunteers in radius; escalating to unit deployment.' }
       ]
     }
   ],
@@ -354,10 +347,10 @@ window.ApdaSeedData = {
       leader: 'Sub-Inspector R.K. Bordoloi',
       phone: '+91 94350 99881',
       type: 'Boat / Water Rescue',
-      status: 'Deployed', // Available, Deployed, On Break
+      status: 'Available', // Available, Deployed, On Break
       personnel: 6,
       equipment: ['Gemini Motor Inflatable Boat', '8x Life Jackets', 'Waterproof First Aid', 'Throw Bags', 'Satellite Handset'],
-      assignedTo: 'REQ-2026-001',
+      assignedTo: null,
       coordinates: [26.1420, 91.7410]
     },
     {
@@ -411,6 +404,58 @@ window.ApdaSeedData = {
       equipment: ['200x Clean Water Pouches', '100x Dry Food Kits', 'Baby Food & Diapers', 'First Aid Box'],
       assignedTo: null,
       coordinates: [26.1400, 91.7480]
+    },
+    {
+      id: 'TEAM-ODRAF-01',
+      name: 'ODRAF Coastal Cyclone & Inflatable Raft Squad',
+      agency: 'SDRF / ODRAF',
+      leader: 'Inspector Bikash Nayak',
+      phone: '+91 94370 44551',
+      type: 'Coastal & Flood Rescue',
+      status: 'Available',
+      personnel: 8,
+      equipment: ['Gemini Inflatable Powerboat', 'Tree Cutters', 'Life Buoys', 'Trauma Stretcher'],
+      assignedTo: null,
+      coordinates: [19.8120, 85.8320]
+    },
+    {
+      id: 'TEAM-SDRF-03',
+      name: 'SDRF Uttarakhand Mountain Search & Rope Rescue Unit',
+      agency: 'SDRF',
+      leader: 'Sub-Inspector Mohan Rawat',
+      phone: '+91 97560 33441',
+      type: 'Mountain & Debris Rescue',
+      status: 'Available',
+      personnel: 7,
+      equipment: ['High-Angle Rope Rigging', 'Hydraulic Jack Spreaders', 'Thermal Search Sensors', 'Emergency Splints'],
+      assignedTo: null,
+      coordinates: [30.2850, 78.9720]
+    },
+    {
+      id: 'TEAM-FIRE-02',
+      name: 'Uttarakhand Fire & Wildfire Suppression Tender',
+      agency: 'Fire Brigade',
+      leader: 'Station Officer Surendra Negi',
+      phone: '+91 94120 11999',
+      type: 'Fire & Wildfire Control',
+      status: 'Available',
+      personnel: 6,
+      equipment: ['Water Misting Cannons', 'Oxygen Respirators', 'Fire Proximity Suits', 'Chain Saws'],
+      assignedTo: null,
+      coordinates: [29.3810, 79.4620]
+    },
+    {
+      id: 'TEAM-AIR-01',
+      name: 'NDRF Air Wing & Disaster Heli-Evac Sortie',
+      agency: 'Air Evacuation',
+      leader: 'Wing Commander V. Joshi',
+      phone: '+91 98110 55432',
+      type: 'Air Evacuation Unit',
+      status: 'Available',
+      personnel: 4,
+      equipment: ['Helicopter Winch Basket', 'Emergency Paramedic Bay', 'High-Altitude Oxygen'],
+      assignedTo: null,
+      coordinates: [30.1900, 79.2000]
     }
   ],
 
@@ -421,7 +466,12 @@ window.ApdaSeedData = {
     { id: 'VLT-003', name: 'Aarav Mishra', phone: '+91 94370 88144', verified: true, availability: 'available', skills: ['Water rescue', 'Radio coordination'], coordinates: [19.8152, 85.8354], completedTasks: 14, peopleAssisted: 52, hoursServed: 97, activeServiceHours: 6.4, responseHistory: ['Coastal evacuation · Puri', 'Cyclone supply run'] }, // [volunteer done] Active-service hours support the 12-hour safety limit.
     { id: 'VLT-004', name: 'Meera Bora', phone: '+91 98640 22335', verified: true, availability: 'offline', skills: ['Logistics', 'Food distribution'], coordinates: [26.1370, 91.7330], completedTasks: 22, peopleAssisted: 91, hoursServed: 164, activeServiceHours: 12, responseHistory: ['Relief-kit distribution', 'Shelter coordination'] }, // [volunteer done] Limit-reached profile demonstrates automatic unavailability.
     { id: 'VLT-005', name: 'Kunal Rawat', phone: '+91 97561 77221', verified: true, availability: 'available', skills: ['Rope rescue', 'Terrain navigation'], coordinates: [30.2894, 78.9781], completedTasks: 26, peopleAssisted: 83, hoursServed: 187, activeServiceHours: 9.6, responseHistory: ['Landslide evacuation', 'Mountain search support'] } // [volunteer done] Active-service hours support the 12-hour safety limit.
-  ],
+  ,
+    { id: 'VLT-006', name: 'Manish Patra', phone: '+91 94371 11222', verified: true, availability: 'available', skills: ['First aid', 'Evacuation', 'Cyclone response'], coordinates: [19.8250, 85.8450], completedTasks: 8, peopleAssisted: 14, hoursServed: 32, activeServiceHours: 2.1, responseHistory: ['Shelter setup'] },
+    { id: 'VLT-007', name: 'Ankita Negi', phone: '+91 97560 22333', verified: true, availability: 'available', skills: ['Landslide response', 'Evacuation', 'First aid'], coordinates: [30.3100, 78.9650], completedTasks: 19, peopleAssisted: 42, hoursServed: 88, activeServiceHours: 4.5, responseHistory: ['Road clearance support'] },
+    { id: 'VLT-008', name: 'Deepak Joshi', phone: '+91 94120 33444', verified: true, availability: 'available', skills: ['Fire suppression', 'First aid'], coordinates: [29.3800, 79.4650], completedTasks: 41, peopleAssisted: 105, hoursServed: 190, activeServiceHours: 8.0, responseHistory: ['Forest fire containment'] },
+    { id: 'VLT-009', name: 'Pooja Tiwari', phone: '+91 94120 44555', verified: true, availability: 'available', skills: ['Evacuation', 'Emergency response'], coordinates: [29.3900, 79.4750], completedTasks: 27, peopleAssisted: 66, hoursServed: 110, activeServiceHours: 5.2, responseHistory: ['Smoke evacuation assistance'] }
+],
 
   // Community Help Chat Rooms & Seed Messages
   chatRooms: [

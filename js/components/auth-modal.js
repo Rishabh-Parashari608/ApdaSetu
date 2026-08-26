@@ -18,13 +18,22 @@ window.ApdaAuthModal = {
     modal.innerHTML = this.renderContent();
     document.body.appendChild(modal);
 
-    // [volunteer done] Bind single outside-click listener for dropdown dismissal
+    // [volunteer done] Bind single outside-click & escape listener for dropdown dismissal
     if (!this.outsideClickListenerBound) {
       document.addEventListener('click', (e) => {
         const trigger = document.getElementById('volunteer-dropdown-trigger');
         const menu = document.getElementById('volunteer-dropdown-menu');
         if (this.volunteerDropdownOpen && trigger && !trigger.contains(e.target) && (!menu || !menu.contains(e.target))) {
           this.closeVolunteerDropdown();
+        }
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (this.volunteerDropdownOpen) {
+            this.closeVolunteerDropdown();
+          } else {
+            this.close();
+          }
         }
       });
       this.outsideClickListenerBound = true;
@@ -82,6 +91,35 @@ window.ApdaAuthModal = {
     const modal = document.getElementById('auth-modal-backdrop');
     if (modal) {
       modal.innerHTML = this.renderContent();
+      this.positionDropdown();
+    }
+  },
+
+  positionDropdown() {
+    if (!this.volunteerDropdownOpen) return;
+    const menu = document.getElementById('volunteer-dropdown-menu');
+    const trigger = document.getElementById('volunteer-dropdown-trigger');
+    if (menu && trigger) {
+      const triggerRect = trigger.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      
+      // Calculate available space
+      const spaceBelow = viewportHeight - triggerRect.bottom - 16; 
+      const spaceAbove = triggerRect.top - 16;
+      const menuHeight = 192; // max-h-48 (12rem/192px)
+      
+      // If there's not enough space below, and more space above, open upwards
+      if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+        menu.style.top = 'auto';
+        menu.style.bottom = '100%';
+        menu.style.marginTop = '0';
+        menu.style.marginBottom = '6px';
+      } else {
+        menu.style.bottom = 'auto';
+        menu.style.top = '100%';
+        menu.style.marginTop = '6px';
+        menu.style.marginBottom = '0';
+      }
     }
   },
 
@@ -243,8 +281,8 @@ window.ApdaAuthModal = {
     this.selectedDemoVolunteerId = selectedId;
 
     return `
-      <div id="volunteer-dropdown-menu" class="volunteer-dropdown-menu absolute left-0 right-0 top-full mt-1.5 z-50 bg-slate-900/98 border border-slate-700/90 rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto backdrop-blur-xl">
-        ${incident ? `<div class="px-2.5 py-1.5 bg-red-950/50 border-b border-red-500/30 text-[10px] text-red-100">🚨 ${String(incident.disasterType).toUpperCase()} · ${String(incident.severity).toUpperCase()} · ${activeMobilization.rules.radiusKm} km radius</div>` : `<div class="px-2.5 py-1.5 bg-slate-950/70 border-b border-slate-800 text-[10px] text-slate-400">No active scramble. Eligibility is calculated when Commander starts one.</div>`}
+      <div id="volunteer-dropdown-menu" class="volunteer-dropdown-menu absolute left-0 right-0 z-[70] bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl overflow-hidden max-h-48 overflow-y-auto backdrop-blur-xl" style="top: 100%; margin-top: 6px;">
+        ${incident ? `<div class="px-2.5 py-1.5 bg-red-950/50 border-b border-red-500/30 text-[10px] text-red-100">🚨 ${String(incident.disasterType).toUpperCase()} · ${String(incident.severity).toUpperCase()} · ${activeMobilization.rules.radiusKm} km radius</div>` : `<div class="px-2.5 py-1.5 bg-slate-950/70 border-b border-slate-800 text-[10px] text-slate-400">Select any registered volunteer profile</div>`}
         <div class="p-1.5 space-y-1">
           ${volunteers.map(volunteer => {
             const isSelected = volunteer.id === selectedId;
